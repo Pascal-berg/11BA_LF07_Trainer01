@@ -1,0 +1,2321 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LF7 Klassenarbeitscheck – Buchführungstrainer Bank</title>
+<style>
+/* Styles: Trainer Engine Standard 1.0 – Grundfarben Dunkelblau/Anthrazit, Diagnosefarben nur für Auswertung */
+:root{
+  --blue-dark:#152A4A;
+  --blue-deep:#0D1E38;
+  --blue:#1E3A63;
+  --blue-mid:#2E5090;
+  --blue-soft:#EAF0F9;
+  --anthracite:#2B333A;
+  --surface:#FFFFFF;
+  --surface-soft:#F3F5F7;
+  --surface-alt:#E8ECF0;
+  --border:#D3D9DE;
+  --text:#20262C;
+  --text-soft:#5B6670;
+  --green-bg:#E6F4EA; --green-line:#2E7D32; --green-text:#1B5E20;
+  --yellow-bg:#FFF6DD; --yellow-line:#B98900; --yellow-text:#7A5B00;
+  --red-bg:#FBE7E7; --red-line:#B3261E; --red-text:#8C1D18;
+  --anschluss-bg:#EEF1F7; --anschluss-line:#4A5C7A;
+  --radius:10px;
+  --radius-sm:7px;
+  --focus:#0B63CE;
+  /* Zwei bewusst unterschiedliche, ausschließlich systemeigene Schriftfamilien:
+     Serifenschrift für Überschriften/Marke (seriöser, prüfungsnaher Charakter),
+     serifenlose Schrift für Bedien- und Lesetext (gute Lesbarkeit auf iPad). */
+  --font-head:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,"Times New Roman",serif;
+  --font-body:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  font-family:var(--font-body);
+  background:var(--surface-soft);
+  color:var(--text);
+  font-size:16px;
+  line-height:1.55;
+  -webkit-text-size-adjust:100%;
+}
+button, input, select, textarea{ font-family:inherit; font-size:16px; }
+button{ cursor:pointer; touch-action:manipulation; }
+:focus-visible{ outline:3px solid var(--focus); outline-offset:2px; }
+h1,h2,h3{ font-family:var(--font-head); font-weight:700; letter-spacing:0.1px; }
+
+.app-shell{ max-width:920px; margin:0 auto; padding:0 16px 60px; }
+
+/* ---------- Kopfleiste / Timer ---------- */
+.topbar{
+  position:sticky; top:0; z-index:50;
+  background:linear-gradient(180deg, var(--blue-dark), var(--blue-deep));
+  color:#fff;
+  padding:10px 16px; display:flex; align-items:center; justify-content:space-between;
+  box-shadow:0 2px 10px rgba(0,0,0,0.22);
+  flex-wrap:wrap; gap:8px;
+  border-bottom:1px solid rgba(255,255,255,0.08);
+}
+.topbar .brand{ display:flex; align-items:center; gap:10px; }
+.topbar .brand-mark{
+  width:34px; height:34px; border-radius:8px; flex:0 0 auto;
+  background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.22);
+  display:flex; align-items:center; justify-content:center;
+}
+.topbar .brand-text{ font-family:var(--font-head); font-weight:700; font-size:15.5px; letter-spacing:0.2px; line-height:1.2; }
+.topbar .brand-text small{ display:block; font-family:var(--font-body); font-weight:400; font-size:12.5px; color:#B9C4D6; }
+.timer-box{
+  display:flex; align-items:center; gap:8px;
+  background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.25);
+  border-radius:8px; padding:6px 12px; font-variant-numeric:tabular-nums;
+}
+.timer-label{ font-size:12.5px; color:#C6D0E0; }
+.timer-value{ font-size:19px; font-weight:700; }
+.timer-box.warn{ background:#4A3A00; border-color:#B98900; }
+.timer-box.critical{ background:#5E1A1A; border-color:#B3261E; }
+
+.time-banner{
+  padding:10px 14px; border-radius:var(--radius); margin:10px 0; font-weight:600; font-size:15px;
+  border:1px solid transparent;
+}
+.time-banner.neutral{ background:var(--blue-soft); color:var(--blue-dark); border-color:var(--border); }
+.time-banner.yellow{ background:var(--yellow-bg); color:var(--yellow-text); border-color:var(--yellow-line); }
+.time-banner.orange{ background:#FFE8CF; color:#7A3E00; border-color:#C9720A; }
+.time-banner.red{ background:var(--red-bg); color:var(--red-text); border-color:var(--red-line); }
+
+.autosave-note{
+  max-width:920px; margin:8px auto 0; padding:0 16px; font-size:12.5px; color:var(--text-soft);
+  text-align:right;
+}
+
+/* ---------- Progress ---------- */
+.progress-wrap{ margin:18px 0 10px; }
+.progress-meta{ display:flex; justify-content:space-between; align-items:baseline; font-size:13.5px; color:var(--text-soft); margin-bottom:8px; }
+.progress-meta .step-label{ font-weight:700; color:var(--blue-dark); font-variant-numeric:tabular-nums; }
+.progress-track{
+  height:8px; background:var(--surface-alt); border-radius:6px; overflow:hidden; position:relative;
+  display:flex; gap:3px; padding:0;
+}
+.progress-seg{ flex:1 1 0; height:100%; background:var(--surface-alt); border-radius:3px; transition:background .25s ease; }
+.progress-seg.done{ background:var(--blue-mid); }
+.progress-seg.current{ background:var(--blue-soft); box-shadow:inset 0 0 0 2px var(--blue-mid); }
+
+/* ---------- Karten / Aufgaben ---------- */
+.card{
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+  padding:22px; margin:16px 0; box-shadow:0 1px 3px rgba(20,30,45,0.06);
+  border-top:3px solid var(--blue-mid);
+}
+.task-header{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:6px; flex-wrap:wrap;}
+.task-header h2{ margin:0; font-size:21px; color:var(--blue-dark); }
+.badge-bereich{
+  display:inline-block; font-size:12.5px; font-weight:700; color:#fff;
+  background:var(--blue-mid); padding:4px 11px; border-radius:20px; white-space:nowrap;
+  letter-spacing:0.15px;
+}
+.badge-anschluss{ background:var(--anthracite); }
+.situation-box{
+  background:var(--anschluss-bg); border-left:4px solid var(--blue-mid);
+  padding:12px 14px; border-radius:6px; margin:10px 0 18px; font-size:15.5px;
+}
+.anschluss-banner{
+  background:var(--anschluss-bg); border:1px dashed var(--anschluss-line); color:var(--anschluss-line);
+  padding:10px 14px; border-radius:8px; font-weight:700; font-size:14.5px; margin-bottom:14px;
+}
+
+.part{ border-top:1px solid var(--border); padding-top:16px; margin-top:16px; }
+.part:first-of-type{ border-top:none; margin-top:0; padding-top:0; }
+.part h3{ margin:0 0 8px; font-size:16.5px; color:var(--anthracite); }
+.part .points-tag{ font-size:13px; color:var(--text-soft); font-weight:600; }
+.prompt{ margin:6px 0 12px; }
+
+textarea, input[type=text], input[type=number], select{
+  width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:8px;
+  background:#fff; color:var(--text); transition:border-color .15s ease, box-shadow .15s ease;
+}
+textarea{ min-height:90px; resize:vertical; }
+input[type=text]:focus, textarea:focus, select:focus{ border-color:var(--blue-mid); box-shadow:0 0 0 3px rgba(46,80,144,0.12); }
+
+.field-row{ display:flex; align-items:center; gap:8px; margin:8px 0; flex-wrap:wrap; }
+.field-row label{ flex:1 1 220px; font-size:14.5px; }
+.field-row .input-wrap{ flex:1 1 160px; display:flex; align-items:center; gap:6px; min-width:140px; }
+.field-row .unit{ font-size:14px; color:var(--text-soft); min-width:16px; }
+.field-row input{ min-height:44px; }
+
+.table-scroll{ overflow-x:auto; -webkit-overflow-scrolling:touch; margin:10px 0; border:1px solid var(--border); border-radius:8px;}
+table.calc-table{ border-collapse:collapse; width:100%; min-width:560px; }
+table.calc-table th, table.calc-table td{
+  border-bottom:1px solid var(--border); padding:9px 10px; text-align:left; font-size:14.5px;
+}
+table.calc-table th{ background:var(--surface-soft); font-weight:700; color:var(--anthracite); }
+table.calc-table td.given{ color:var(--text-soft); }
+table.calc-table input{ min-width:100px; min-height:42px; }
+table.data-table{ border-collapse:collapse; width:100%; min-width:480px; }
+table.data-table th, table.data-table td{ border:1px solid var(--border); padding:8px 10px; font-size:14.5px; text-align:center; }
+table.data-table th{ background:var(--surface-soft); }
+table.data-table td:first-child, table.data-table th:first-child{ text-align:left; }
+
+.btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:6px;
+  min-height:46px; padding:10px 20px; border-radius:8px; border:1.5px solid var(--blue-mid);
+  background:var(--blue-mid); color:#fff; font-weight:700; font-size:15px;
+  transition:background .15s ease, transform .05s ease, box-shadow .15s ease;
+}
+.btn:hover:not(:disabled){ background:var(--blue-dark); border-color:var(--blue-dark); }
+.btn:active:not(:disabled){ transform:translateY(1px); }
+.btn:disabled{ opacity:0.42; cursor:not-allowed; }
+.btn.secondary{ background:#fff; color:var(--blue-mid); }
+.btn.secondary:hover:not(:disabled){ background:var(--blue-soft); color:var(--blue-dark); }
+.btn.ghost{ background:transparent; color:var(--blue-dark); border-color:var(--border); }
+.btn.ghost:hover:not(:disabled){ background:var(--surface-alt); }
+.btn.danger{ background:#fff; color:var(--red-line); border-color:var(--red-line); }
+.btn.danger:hover:not(:disabled){ background:var(--red-bg); }
+.btn.wide{ width:100%; }
+.btn-row{ display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; }
+
+.feedback{
+  margin-top:8px; padding:10px 12px; border-radius:8px; font-size:14.5px; border:1px solid transparent;
+}
+.feedback.correct{ background:var(--green-bg); border-color:var(--green-line); color:var(--green-text); }
+.feedback.partial{ background:var(--yellow-bg); border-color:var(--yellow-line); color:var(--yellow-text); }
+.feedback.wrong{ background:var(--red-bg); border-color:var(--red-line); color:var(--red-text); }
+
+.criteria-box{
+  background:var(--surface-soft); border:1px solid var(--border); border-radius:8px; padding:12px 14px; margin-top:10px;
+}
+.criteria-box ul{ margin:8px 0 4px; padding-left:20px; }
+.criteria-note{ font-style:italic; color:var(--text-soft); font-size:13.5px; margin-top:8px; }
+
+.self-assess{ margin-top:12px; }
+.self-assess .options{ display:flex; gap:8px; flex-wrap:wrap; margin-top:6px; }
+.self-assess label{
+  display:flex; align-items:center; gap:6px; border:1.5px solid var(--border); border-radius:8px;
+  padding:9px 12px; font-size:14px; min-height:44px; background:#fff; transition:border-color .12s ease, background .12s ease;
+}
+.self-assess label:has(input:checked){ border-color:var(--blue-mid); background:var(--blue-soft); font-weight:700; }
+.self-assess input{ width:auto; }
+
+.confidence{ margin-top:12px; }
+.confidence .options{ display:flex; gap:8px; flex-wrap:wrap; margin-top:6px; }
+.confidence label{
+  display:flex; align-items:center; gap:6px; border:1.5px solid var(--border); border-radius:8px;
+  padding:9px 12px; font-size:14px; min-height:44px; background:#fff; transition:border-color .12s ease, background .12s ease;
+}
+.confidence label:has(input:checked){ border-color:var(--blue-mid); background:var(--blue-soft); font-weight:700; }
+.confidence input{ width:auto; }
+
+.nav-row{ display:flex; justify-content:space-between; margin:20px 0 10px; gap:10px; }
+.finish-early-row{ text-align:center; margin:0 0 40px; }
+.back-to-results-row{ margin:14px 0 40px; }
+.review-banner{
+  background:var(--blue-soft); border:1px solid var(--blue-mid); color:var(--blue-dark);
+  padding:10px 14px; border-radius:8px; font-size:14px; font-weight:600; margin-bottom:14px;
+}
+.part.review-highlight{
+  background:var(--blue-soft); border-radius:8px; margin-left:-14px; margin-right:-14px; padding:16px 14px;
+  box-shadow:inset 0 0 0 2px var(--blue-mid);
+}
+.link-btn{
+  background:none; border:none; padding:8px; color:var(--text-soft); font-size:13px;
+  text-decoration:underline; text-underline-offset:3px; min-height:36px;
+}
+.link-btn:hover{ color:var(--blue-mid); }
+
+/* ---------- Startseite / Abschluss ---------- */
+.hero{ text-align:left; padding:30px 4px 8px; border-bottom:1px solid var(--border); margin-bottom:6px; }
+.hero h1{ color:var(--blue-dark); font-size:28px; margin:4px 0 2px; }
+.hero .sub{ color:var(--blue-mid); font-size:16px; margin-bottom:18px; font-weight:600; }
+.info-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:16px 0; }
+@media (max-width:520px){ .info-grid{ grid-template-columns:1fr; } }
+.info-item{
+  background:var(--surface-soft); border:1px solid var(--border); border-left:3px solid var(--blue-mid);
+  border-radius:6px; padding:10px 12px; font-size:14.5px;
+}
+.checkbox-row{ display:flex; gap:10px; align-items:flex-start; margin:18px 0; }
+.checkbox-row input{ width:22px; height:22px; margin-top:2px; }
+
+.dashboard-header{ text-align:left; margin:24px 0 6px; }
+.dashboard-header h1{ color:var(--blue-dark); font-size:25px; margin:0 0 4px; }
+.score-hero{ display:flex; gap:20px; align-items:center; flex-wrap:wrap; margin:14px 0 20px; }
+.score-ring{
+  width:118px; height:118px; border-radius:50%; flex:0 0 auto;
+  display:flex; align-items:center; justify-content:center;
+  background:conic-gradient(var(--blue-mid) calc(var(--pct,0) * 1%), var(--surface-alt) 0);
+}
+.score-ring .score-inner{
+  width:92px; height:92px; border-radius:50%; background:#fff;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  box-shadow:inset 0 0 0 1px var(--border);
+}
+.score-ring .pct{ font-size:24px; font-weight:800; color:var(--blue-dark); font-variant-numeric:tabular-nums; }
+.score-ring .lbl{ font-size:11px; color:var(--text-soft); }
+.score-text{ font-size:15px; color:var(--text-soft); }
+
+.area-card{
+  border:1px solid var(--border); border-radius:10px; padding:14px 16px; margin:10px 0;
+  border-left-width:6px;
+}
+.area-card.green{ border-left-color:var(--green-line); }
+.area-card.yellow{ border-left-color:var(--yellow-line); }
+.area-card.red{ border-left-color:var(--red-line); }
+.area-card .row1{ display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; }
+.area-card .name{ font-weight:700; font-size:15.5px; }
+.area-pct{ font-weight:800; font-size:15.5px; }
+.area-tag{
+  display:inline-block; font-size:12.5px; font-weight:700; padding:3px 9px; border-radius:20px; margin-top:4px;
+}
+.area-tag.green{ background:var(--green-bg); color:var(--green-text); }
+.area-tag.yellow{ background:var(--yellow-bg); color:var(--yellow-text); }
+.area-tag.red{ background:var(--red-bg); color:var(--red-text); }
+.area-note{ font-size:14px; margin-top:8px; color:var(--text); }
+.flag-note{ font-size:13.5px; margin-top:6px; padding:8px 10px; border-radius:6px; background:#FFF3E0; color:#7A3E00; border:1px solid #C9720A; }
+.area-card.clickable{ cursor:pointer; transition:box-shadow .15s ease, transform .05s ease; }
+.area-card.clickable:hover{ box-shadow:0 2px 10px rgba(20,30,45,0.12); transform:translateY(-1px); }
+.review-link-hint{ font-size:12.5px; color:var(--blue-mid); font-weight:700; margin-top:10px; }
+
+.anschluss-result{ background:var(--anschluss-bg); border:1px dashed var(--anschluss-line); border-radius:10px; padding:14px 16px; margin:16px 0; }
+
+.diag-banner{
+  background:var(--surface-soft); border:1px solid var(--border); border-left:4px solid var(--blue-mid);
+  border-radius:6px; padding:9px 12px; font-size:13.5px; color:var(--text-soft); margin:10px 0;
+}
+
+.lernplan-box{ display:none; margin-top:16px; }
+.lernplan-item{ background:var(--surface-soft); border:1px solid var(--border); border-radius:8px; padding:12px 14px; margin:8px 0; }
+.lernplan-item .rank{ font-weight:800; color:var(--blue-mid); margin-right:6px; }
+
+.footer-note{ font-size:12.5px; color:var(--text-soft); margin-top:30px; text-align:center; }
+
+@media print{
+  .topbar, .nav-row, .no-print, .btn-row, .autosave-note, .review-banner, .review-link-hint{ display:none !important; }
+  body{ background:#fff; }
+  .card{ box-shadow:none; break-inside:avoid; border-top-color:var(--border); }
+  .area-card{ break-inside:avoid; }
+  .app-shell{ max-width:100%; }
+}
+
+/* ---------- Ergänzungen für Trainer 01 (LF7 Bank) ---------- */
+.howto{ margin:6px 0 10px; padding-left:20px; font-size:15px; }
+.howto li{ margin:4px 0; }
+.mode-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:6px 0 4px; }
+@media (max-width:640px){ .mode-grid{ grid-template-columns:1fr; } }
+.mode-card{ border:1.5px solid var(--border); border-radius:10px; padding:12px 14px; background:#fff; display:block; cursor:pointer; min-height:44px; }
+.mode-card:has(input:checked){ border-color:var(--blue-mid); background:var(--blue-soft); }
+.mode-card input{ width:auto; margin-right:8px; }
+.mode-card .mode-title{ font-weight:700; color:var(--blue-dark); }
+.mode-card .mode-sub{ display:block; font-size:14px; color:var(--text-soft); margin-top:2px; margin-left:26px; }
+.howto, .info-grid{ font-size:15px; }
+
+.dialog-overlay{ position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(13,30,56,0.55); z-index:100; display:flex; align-items:center; justify-content:center; padding:16px; }
+.dialog{ background:#fff; border-radius:12px; max-width:540px; width:100%; padding:22px; box-shadow:0 10px 40px rgba(0,0,0,0.35); border-top:4px solid var(--blue-mid); max-height:90vh; overflow:auto; }
+.dialog h3{ margin:0 0 10px; color:var(--blue-dark); }
+.dialog p{ margin:8px 0; }
+.dialog ul{ margin:6px 0 8px; padding-left:20px; }
+.dialog .btn-row{ justify-content:flex-end; }
+.dialog .btn.small{ min-height:40px; padding:6px 12px; font-size:14px; }
+
+.task-tools{ display:flex; justify-content:flex-end; margin:0 0 4px; }
+.mark-btn{ font-size:14px; border:1.5px solid var(--border); border-radius:8px; background:#fff; color:var(--blue-dark); min-height:40px; padding:6px 12px; font-weight:600; text-decoration:none; }
+.mark-btn[aria-pressed="true"]{ background:var(--blue-soft); border-color:var(--blue-mid); }
+.marked-label{ font-weight:700; color:var(--blue-dark); }
+
+table.data-table caption{ caption-side:top; text-align:left; font-weight:700; padding:8px 10px; color:var(--anthracite); }
+table.data-table td.num{ text-align:right; font-variant-numeric:tabular-nums; }
+table.data-table td.empty{ background:var(--surface-soft); }
+
+.choice-list label{ display:flex; gap:10px; align-items:flex-start; border:1.5px solid var(--border); border-radius:8px; padding:10px 12px; margin:6px 0; min-height:44px; background:#fff; cursor:pointer; }
+.choice-list label:has(input:checked){ border-color:var(--blue-mid); background:var(--blue-soft); }
+.choice-list input{ width:auto; margin-top:4px; }
+.choice-list .letter{ font-weight:700; min-width:20px; }
+
+.booking-row{ display:grid; grid-template-columns:1fr auto 1fr 170px; gap:10px; align-items:end; margin:10px 0; }
+.booking-row label{ display:block; font-size:13.5px; font-weight:600; margin-bottom:4px; color:var(--anthracite); }
+.booking-row .an{ padding-bottom:12px; font-weight:700; }
+.booking-row .amount{ display:flex; align-items:center; gap:6px; }
+.booking-row select, .booking-row input{ min-height:44px; }
+@media (max-width:700px){ .booking-row{ grid-template-columns:1fr; } .booking-row .an{ padding-bottom:0; } }
+.step-head{ font-weight:700; color:var(--blue-dark); margin:14px 0 4px; font-size:15px; }
+table.check-table{ border-collapse:collapse; width:100%; min-width:680px; }
+table.check-table th, table.check-table td{ border-bottom:1px solid var(--border); padding:8px 8px; text-align:left; font-size:14.5px; vertical-align:middle; }
+table.check-table th{ background:var(--surface-soft); font-weight:700; color:var(--anthracite); }
+table.check-table select{ min-height:44px; }
+
+.review-box{ background:var(--surface-soft); border:1px solid var(--border); border-left:4px solid var(--anthracite); border-radius:8px; padding:12px 14px; margin-top:14px; font-size:14.5px; }
+.review-box h4{ margin:0 0 4px; font-size:14.5px; color:var(--anthracite); }
+.review-box ul{ margin:4px 0 10px; padding-left:20px; }
+.review-box .meta{ color:var(--text-soft); margin:0 0 8px; }
+.status-word{ font-weight:700; }
+.misc-item{ background:#FFF3E0; border:1px solid #C9720A; color:#7A3E00; border-radius:8px; padding:10px 12px; margin:8px 0; cursor:pointer; }
+.misc-item .review-link-hint{ color:#7A3E00; }
+.strong-msg{ background:var(--green-bg); border:1px solid var(--green-line); color:var(--green-text); padding:10px 14px; border-radius:8px; font-weight:600; margin:8px 0; }
+.bank-note{ font-size:14px; }
+
+@media print{
+  .dialog-overlay, #restartGlobalRow, .task-tools, #screenStart, #screenTasks{ display:none !important; }
+  .area-tag, .area-card, .score-ring, .strong-msg, .misc-item{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  .area-card.clickable{ cursor:default; }
+  .card{ border:1px solid var(--border); }
+}
+</style>
+</head>
+<body>
+<noscript><p style="padding:20px;font-family:sans-serif;">Dieser Trainer benötigt aktiviertes JavaScript. Es werden keine Daten übertragen.</p></noscript>
+
+<div class="topbar" id="topbar">
+  <div class="brand">
+    <span class="brand-mark" aria-hidden="true">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+        <path d="M4 19V5l8 5 8-5v14" stroke="#EAF0F9" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>
+      </svg>
+    </span>
+    <span class="brand-text">LF7 Klassenarbeitscheck<small>Buchführungstrainer Bank · Bensheimer Bank AG</small></span>
+  </div>
+  <div class="timer-box" id="timerBox">
+    <span class="timer-label">Verbleibende Zeit</span>
+    <span class="timer-value" id="timerValue">45:00</span>
+  </div>
+</div>
+<div class="autosave-note no-print" id="autosaveNote" style="display:none;">Ihre Eingaben werden fortlaufend automatisch auf diesem Gerät gespeichert. Status: <span id="saveStatus">gespeichert</span></div>
+
+<div class="app-shell">
+  <div id="timeBannerSlot"></div>
+
+  <!-- ================= STARTSEITE ================= -->
+  <section id="screenStart" class="hero">
+    <h1>LF7 Klassenarbeitscheck</h1>
+    <div class="sub">Lernfeld 7 · Werteströme und Geschäftsprozesse erfassen und dokumentieren · Klasse 11BA</div>
+    <p>Dieser Trainer simuliert eine Klassenarbeit zur Buchführung einer Bank. Sie arbeiten als Mitarbeiterin bzw. Mitarbeiter im Rechnungswesen der Bensheimer Bank AG und buchen immer aus Sicht der Bank.</p>
+    <p>Sie erhalten keine Note. Die Punkte sind Diagnosepunkte – keine Schulnote. Ziel ist, persönliche Stärken und Übungsbereiche zu erkennen. Für die Diagnose zählt Ihr erster Versuch je Teilaufgabe.</p>
+
+    <div class="card">
+      <h3 style="margin-top:0;">Was Sie erwartet</h3>
+      <div class="mode-grid" id="modeGrid" role="radiogroup" aria-label="Modus wählen"></div>
+      <div class="info-grid" id="infoGrid"></div>
+
+      <h3>So beantworten Sie die Aufgaben</h3>
+      <ul class="howto">
+        <li>Zahlen möglichst ohne Einheit eingeben, z. B. 2030000 oder 2.030.000,00. Ein Minuszeichen ist erlaubt.</li>
+        <li>Konten wählen Sie aus den Listen aus. Ein Buchungssatz lautet immer: Sollkonto an Habenkonto, mit Betrag. Der Betrag wird geprüft, bringt aber keine eigenen Punkte.</li>
+        <li>Fachbegriffe ohne Artikel eingeben. Offene Antworten frei formulieren; Lösungshinweise öffnen Sie erst nach Ihrer eigenen Antwort.</li>
+        <li>Es wird immer aus Sicht der Bensheimer Bank AG gebucht. Debitoren bedeutet hier Kontokorrentkonten-Debitoren, Kreditoren bedeutet Kontokorrentkonten-Kreditoren.</li>
+        <li>Mit „Später noch einmal ansehen“ markieren Sie Aufgaben, zu denen Sie vor der Auswertung zurückkehren möchten.</li>
+      </ul>
+
+      <div style="margin:14px 0 4px;">
+        <label for="studentTagStart" style="font-weight:600;">Name oder Kürzel (optional)</label>
+        <input type="text" id="studentTagStart" placeholder="z. B. AB oder Vorname" autocomplete="off" style="margin-top:6px;max-width:360px;">
+        <p style="font-size:13px;color:var(--text-soft);margin:6px 0 0;">Name oder Kürzel sind freiwillig und werden ausschließlich lokal auf diesem Gerät verarbeitet.</p>
+      </div>
+
+      <div class="checkbox-row">
+        <input type="checkbox" id="chkSelfDirected">
+        <label for="chkSelfDirected">Ich bearbeite die Aufgaben zunächst selbstständig.</label>
+      </div>
+
+      <button class="btn wide" id="btnStart" disabled>Trainer starten</button>
+      <p style="font-size:13px;color:var(--text-soft);margin-top:10px;">Dieser Trainer arbeitet vollständig lokal auf Ihrem Gerät. Es werden keine Eingaben an einen Server übertragen. Die Zeit läuft erst nach Klick auf „Trainer starten“.</p>
+    </div>
+  </section>
+
+  <!-- ================= AUFGABENBEREICH ================= -->
+  <section id="screenTasks" style="display:none;">
+    <div class="progress-wrap">
+      <div class="progress-meta">
+        <span class="step-label" id="taskCounter">Aufgabe 1 von 7</span>
+        <span id="taskAreaLabel"></span>
+      </div>
+      <div class="progress-track" id="progressTrack"></div>
+    </div>
+
+    <div id="taskContainer"></div>
+
+    <div class="nav-row no-print">
+      <button class="btn ghost" id="btnBack">← Zurück</button>
+      <button class="btn" id="btnNext">Weiter →</button>
+    </div>
+    <div class="finish-early-row no-print" id="finishEarlyRow">
+      <button class="link-btn" id="btnFinishEarly">Trainer vorzeitig beenden und zur Auswertung springen</button>
+    </div>
+    <div class="back-to-results-row no-print" id="backToResultsRow" style="display:none;">
+      <button class="btn secondary wide" id="btnBackToResults">← Zurück zur Auswertung</button>
+    </div>
+  </section>
+
+  <!-- ================= AUSWERTUNG ================= -->
+  <section id="screenResults" style="display:none;">
+    <div class="dashboard-header">
+      <h1 id="resultsTitle">Ihr persönlicher Check – LF7 Buchführung</h1>
+      <div class="score-hero">
+        <div class="score-ring" id="scoreRing">
+          <div class="score-inner"><span class="pct" id="totalPct">0 %</span><span class="lbl">Gesamt</span></div>
+        </div>
+        <div>
+          <div class="score-text" id="totalText">0 von 60 Diagnosepunkten</div>
+          <div class="score-text" id="timeText"></div>
+        </div>
+      </div>
+      <p style="font-size:13px;color:var(--text-soft);margin-top:-6px;">Die Punkte sind Diagnosepunkte – keine Schulnote. Es zählt jeweils Ihr erster Versuch.</p>
+      <div id="strongMsg"></div>
+    </div>
+
+    <div class="card" id="miscCard" style="display:none;">
+      <h3 style="margin-top:0;">Mögliche Fehlvorstellungen (falsch, aber sicher)</h3>
+      <p style="font-size:14px;color:var(--text-soft);margin-top:0;">Diese Teilaufgaben haben Sie beim ersten Versuch falsch beantwortet, obwohl Sie sich sicher waren. Sie werden hier getrennt von der Punktzahl aufgeführt.</p>
+      <div id="miscList"></div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-top:0;">Diagnosebereiche</h3>
+      <div id="areaResults"></div>
+    </div>
+
+    <div class="card" id="bankCard" style="display:none;">
+      <h3 style="margin-top:0;">Querschnitt: Sicht der Bank</h3>
+      <p style="font-size:14px;color:var(--text-soft);margin-top:0;">Alle Teilaufgaben, bei denen die Perspektive der Bensheimer Bank AG entscheidend war (Debitoren, Kreditoren, Spareinlagen, Zinsen, Aufwand und Ertrag).</p>
+      <div id="bankResult"></div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-top:0;">Detaildiagnose nach Unterthemen</h3>
+      <p style="font-size:14px;color:var(--text-soft);margin-top:0;">Diese Übersicht zeigt Ihr Ergebnis je Unterthema – so werden gezielte Übungsschwerpunkte sichtbar.</p>
+      <div id="topicResults"></div>
+    </div>
+
+    <div class="card">
+      <div class="lernplan-box" id="lernplanBox" style="display:block;margin-top:0;">
+        <h3 style="margin-top:0;">Das sollten Sie als Nächstes wiederholen</h3>
+        <div id="lernplanList"></div>
+      </div>
+    </div>
+
+    <div class="btn-row no-print">
+      <button class="btn secondary" id="btnPrint">Auswertung drucken / PDF</button>
+      <button class="btn secondary" id="btnSaveTxt">Ergebnis als Textdatei speichern</button>
+      <button class="btn secondary" id="btnSaveJson">Ergebnis als JSON speichern</button>
+      <button class="btn danger" id="btnRestart">Trainer neu starten</button>
+    </div>
+
+    <p class="footer-note" id="footerNote"></p>
+  </section>
+
+  <div class="btn-row no-print" style="justify-content:center;margin-top:10px;" id="restartGlobalRow">
+    <button class="btn ghost" id="btnRestartGlobal" style="font-size:13px;">Fortschritt löschen / Trainer neu starten</button>
+  </div>
+</div>
+
+<script>
+/* =====================================================================
+   LF7 KLASSENARBEITSCHECK – TRAINER 01 (Trainer Engine Standard 1.0)
+   Aufbau: 1) CONFIG  2) QUESTIONS (TASKS)  3) ENGINE  4) UI
+   Inhalte (Aufgaben, Lösungen, Punkte, Toleranzen, Unterthemen) stehen
+   ausschließlich im Abschnitt „POOL“. Die Engine ab Abschnitt 3 muss
+   für inhaltliche Änderungen normalerweise nicht angepasst werden.
+   Begriffe im Pool: PUNKTE = points · LÖSUNG = correct/expected/booking ·
+   TOLERANZ = tol · UNTERTHEMA = topic · FEEDBACK = feedback ·
+   AKZEPTIERTE ANTWORTEN = accepted · FOLGEFEHLER = followUp
+   ===================================================================== */
+
+/* ================= POOL: CONFIG, KONTEN, LERNHINWEISE, QUESTIONS ================= */
+/* =====================================================================
+   POOL TRAINER 01 – LF7 KLASSENARBEITSCHECK (11BA, Bensheimer Bank AG)
+   Trainer-ID: bank_lf7_trainer01_v1   ·   60 Diagnosepunkte   ·   45 Minuten
+   Quelle der Fachregeln: LS01–LS07 (Hr. Berg), Stoffstand laut Prompt.
+   NICHT enthalten: Abschluss über GuV, GuV an Eigenkapital, SBK.
+   ===================================================================== */
+
+const CONFIG = {
+  trainerId: "bank_lf7_trainer01_v1",
+  version: "1.0",
+  title: "LF7 Klassenarbeitscheck – Buchführungstrainer Bank",
+  subject: "Lernfeld 7 · Werteströme und Geschäftsprozesse erfassen und dokumentieren · Klasse 11BA",
+  totalPoints: 60,
+  totalMinutes: 45,
+  timerWarnMinutes: { hint: 30, yellow: 15, orange: 5, red: 0 },
+  // Modi: Klassenarbeitscheck = alle Teilaufgaben; Kurztest = nur Teilaufgaben mit kurztest:true
+  modes: {
+    klassenarbeit: { label: "Klassenarbeitscheck", minutes: 45, onlyFlag: null,
+                     timerWarnMinutes: { hint: 30, yellow: 15, orange: 5, red: 0 } },
+    kurztest:      { label: "Kurztest", minutes: 10, onlyFlag: "kurztest",
+                     timerWarnMinutes: { hint: null, yellow: 5, orange: 2, red: 0 } }
+  },
+  // Diagnosegrenzen (Standard Abschnitt 11)
+  bands: { sicher: 80, festigen: 60 },
+  // Rechenregeln (Standard Abschnitt 19–21, 41)
+  rules: {
+    rounding: "Endergebnisse auf zwei Dezimalstellen, kaufmännisch gerundet; Zwischenergebnisse nicht runden.",
+    tolEuro: 0.02,
+    followUp: "Folgefehler: richtiger Rechenweg mit eigenem Zwischenwert = 50 % der Feldpunkte.",
+    retention: "Kreditinstitut: Buchungsbelege und Handelsbücher 10 Jahre, Handelsbriefe 6 Jahre; Frist beginnt am 31.12. des Entstehungsjahres.",
+    bookingAmount: "Betrag im Buchungssatz wird angezeigt und geprüft, bringt aber keine eigenen Punkte (Soll 1 P, Haben 1 P).",
+    perspective: "Es wird immer aus Sicht der Bensheimer Bank AG gebucht. Debitoren = Kontokorrentkonten-Debitoren, Kreditoren = Kontokorrentkonten-Kreditoren."
+  }
+};
+
+// Kontenliste für Dropdowns – bewusst alphabetisch, damit die Reihenfolge nichts verrät.
+const ACCOUNTS = [
+  "Betriebs- und Geschäftsausstattung (BGA)", "Debitoren", "Eigenkapital",
+  "Forderungen an Kreditinstitute", "Guthaben bei der Deutschen Bundesbank (DBB)",
+  "Kasse", "Kreditoren", "Personalaufwendungen", "Provisionserträge",
+  "Sachaufwendungen", "Spareinlagen", "Termineinlagen",
+  "Verbindlichkeiten gegenüber Kreditinstituten", "Wertpapiere",
+  "Zinsaufwendungen", "Zinserträge"
+];
+const BGA = ACCOUNTS[0], DEB = "Debitoren", KRED = "Kreditoren", DBB = ACCOUNTS[4],
+      KASSE = "Kasse", SPAR = "Spareinlagen", SACH = "Sachaufwendungen",
+      PERS = "Personalaufwendungen", ZA = "Zinsaufwendungen", ZE = "Zinserträge";
+
+// Lernhinweise je Unterthema (Standard Abschnitt 13: konkret, nicht „Thema wiederholen“)
+const LEARN_HINTS = {
+  "Aufgaben des Rechnungswesens": "Wiederholen Sie die vier Teilbereiche des Rechnungswesens und ordnen Sie jeweils zu, ob sie vergangenheits- oder zukunftsbezogen sind.",
+  "Grundsätze ordnungsmäßiger Buchführung": "Üben Sie, Beispielsituationen den GoB (Vollständigkeit, Richtigkeit, Klarheit, Unveränderbarkeit, Lesbarkeit) zuzuordnen.",
+  "Aufbewahrungsfristen": "Wiederholen Sie die Fristen (Belege und Bücher 10 Jahre, Handelsbriefe 6 Jahre) und achten Sie darauf, dass die Frist erst am Ende des Entstehungsjahres beginnt.",
+  "Inventur – Inventar – Bilanz": "Wiederholen Sie die Reihenfolge Inventur → Inventar → Bilanz und formulieren Sie zu jedem Begriff einen eigenen Satz.",
+  "Inventurverfahren bei Kreditinstituten": "Wiederholen Sie, warum Kreditinstitute vorwiegend die Buchinventur nutzen, und unterscheiden Sie die drei Inventurformen.",
+  "Reinvermögen und Bilanzgleichung": "Üben Sie die Rechnung Vermögen − Schulden = Reinvermögen (Eigenkapital) mit mehreren Postenlisten.",
+  "Anlässe der Inventur": "Wiederholen Sie, zu welchen Anlässen eine Inventur Pflicht ist (z. B. Gründung, Geschäftsjahresende, Auflösung, Übernahme).",
+  "Aktiv- und Passivposten der Bankbilanz": "Wiederholen Sie die Bankbilanz: Aktivseite = Mittelverwendung, Passivseite = Mittelherkunft. Ordnen Sie jeden Posten mit einer Begründung zu.",
+  "Debitoren und Kreditoren (Banksicht)": "Merken Sie sich: Debitor schuldet der Bank Geld (Forderung, Aktiv). Kreditor hat Guthaben bei der Bank (Verbindlichkeit, Passiv).",
+  "Banksicht: Spareinlagen": "Prüfen Sie immer aus Sicht der Bank: Die Bank schuldet dem Sparer sein Guthaben, deshalb sind Spareinlagen ein Passivposten.",
+  "Aktivkonto führen": "Üben Sie Aktivkonten: Anfangsbestand und Mehrungen im Soll, Minderungen im Haben, Schlussbestand = Summe Soll − Minderungen.",
+  "Passivkonto führen": "Üben Sie Passivkonten: Anfangsbestand und Mehrungen im Haben, Minderungen im Soll, Schlussbestand = Summe Haben − Minderungen.",
+  "Bilanzveränderungen": "Wiederholen Sie die vier Arten: Aktivtausch, Passivtausch, Aktiv-Passiv-Mehrung und Aktiv-Passiv-Minderung. Fragen Sie jeweils, welche Bilanzseiten betroffen sind.",
+  "Buchungscheck (fünf Schritte)": "Gehen Sie immer in dieser Reihenfolge vor: Konten → Kontoart → Mehrung/Minderung → Soll/Haben → Buchungssatz. Beginnen Sie nicht mit Soll und Haben.",
+  "Aktiv- und Passivmehrung buchen": "Wiederholen Sie die Regeln: Aktivmehrung = Soll, Passivmehrung = Haben. Prüfen Sie zuerst das Konto, nicht den Geldfluss.",
+  "Debitoren und Kreditoren buchen": "Üben Sie Fälle mit Kundenkonten: Kreditoren sind Passivkonten, Debitoren Aktivkonten. Eine Minderung steht bei Passivkonten im Soll, bei Aktivkonten im Haben.",
+  "Passivtausch": "Üben Sie Passivtausch-Fälle: Beide Konten sind Passivkonten, die Minderung steht im Soll, die Mehrung im Haben.",
+  "Aktivtausch": "Üben Sie Aktivtausch-Fälle: Beide Konten sind Aktivkonten, die Mehrung steht im Soll, die Minderung im Haben.",
+  "Aufwand oder Ertrag (Banksicht)": "Fragen Sie bei jedem Fall: Wer zahlt an wen, und hat die Bank danach mehr oder weniger Eigenkapital? „Gutschrift“ bedeutet für die Bank nicht automatisch Ertrag.",
+  "Zinsaufwand (Banksicht)": "Zinsen, die die Bank ihren Kunden gutschreibt, sind für die Bank Zinsaufwendungen und werden im Soll gebucht.",
+  "Zinsertrag (Banksicht)": "Zinsen und Entgelte, die Kunden an die Bank zahlen, sind Erträge der Bank. Ertragskonten werden im Haben gebucht.",
+  "Personalaufwand": "Gehälter sind Personalaufwendungen im Soll. Die Gegenbuchung ist das Konto, auf dem die Mitarbeiter das Gehalt gutgeschrieben bekommen (Kreditoren).",
+  "Sachaufwand und Erfolgskonten abgrenzen": "Prüfen Sie bei Rechnungen: Aufwand vermindert das Eigenkapital und steht im Soll; das Bestandskonto, über das gezahlt wird, steht im Haben.",
+  "Gewinn und Verlust berechnen": "Üben Sie: Summe der Erträge − Summe der Aufwendungen. Ein positives Ergebnis ist ein Gewinn, ein negatives ein Verlust.",
+  "Seiten der GuV": "Merken Sie sich: Aufwendungen stehen im GuV-Konto im Soll, Erträge im Haben, wie in den Erfolgskonten.",
+  "Wirkung auf das Eigenkapital": "Wiederholen Sie: Ein Gewinn erhöht das Eigenkapital grundsätzlich, ein Verlust vermindert es."
+};
+
+// Hilfsfunktion: Dropdown-Zuordnung (matchGroup)
+const YESNO = (id, text, correct, pts, topic) => ({ id, text, correct, points: pts, topic });
+
+const TASKS = [
+
+  /* ================= AUFGABE 1 · GRUNDLAGEN RECHNUNGSWESEN (5 P) ================= */
+  {
+    id: "a1", area: "grundlagen", areaName: "Grundlagen Rechnungswesen", maxPoints: 5,
+    situation: "Sie arbeiten im Rechnungswesen der Bensheimer Bank AG.",
+    parts: [
+      { id: "p1_1", kind: "choice", points: 1, topic: "Aufgaben des Rechnungswesens", kurztest: true,
+        prompt: "Welcher Teilbereich des betrieblichen Rechnungswesens ist zukunftsbezogen?",
+        options: ["Buchführung und Bilanz", "Kosten- und Erlösrechnung", "Planungsrechnung", "Statistik", "Belegwesen"],
+        correct: 2,
+        feedback: "Überlegen Sie, welcher Bereich Zahlen der Vergangenheit festhält und welcher die künftige Steuerung der Bank plant." },
+      { id: "p1_2", kind: "matchGroup", points: 2, topic: "Grundsätze ordnungsmäßiger Buchführung",
+        prompt: "Ordnen Sie jeder Situation den passenden Grundsatz ordnungsmäßiger Buchführung zu.",
+        options: ["Klarheit", "Lesbarkeit", "Richtigkeit", "Unveränderbarkeit", "Vollständigkeit"],
+        items: [
+          YESNO("i1", "Ein Fehler wird durch eine Zusatzbuchung korrigiert; der ursprüngliche Eintrag bleibt erkennbar.", "Unveränderbarkeit", 0.5),
+          YESNO("i2", "Jeder Geschäftsvorfall wird erfasst, kein Beleg fehlt.", "Vollständigkeit", 0.5),
+          YESNO("i3", "Ein sachverständiger Dritter kann sich in angemessener Zeit einen Überblick verschaffen.", "Klarheit", 0.5),
+          YESNO("i4", "Gespeicherte Buchungsdaten können während der Aufbewahrungsfrist jederzeit lesbar gemacht werden.", "Lesbarkeit", 0.5)
+        ],
+        feedback: "Überlegen Sie bei jeder Situation, was genau gesichert werden soll: das Erfassen, das Verstehen, das Verändern oder das Lesen." },
+      { id: "p1_3", kind: "matchGroup", points: 2, topic: "Aufbewahrungsfristen",
+        prompt: "Bis zu welchem Tag sind die folgenden Unterlagen der Bensheimer Bank AG mindestens aufzubewahren?",
+        options: ["31.12.2032", "31.12.2034", "31.12.2036", "24.05.2036", "25.01.2032"],
+        items: [
+          YESNO("i1", "Buchungsbeleg, entstanden am 24. Mai 2026", "31.12.2036", 1),
+          YESNO("i2", "Empfangener Handelsbrief, eingegangen am 25. Januar 2026", "31.12.2032", 1)
+        ],
+        feedback: "Prüfen Sie zuerst die Länge der Frist je Unterlage und dann, wann die Frist beginnt." }
+    ]
+  },
+
+  /* ================= AUFGABE 2 · INVENTUR, INVENTAR, BILANZ (9 P) ================= */
+  {
+    id: "a2", area: "inventur", areaName: "Inventur – Inventar – Bilanz", maxPoints: 9,
+    situation: "Die Bensheimer Bank AG bereitet ihren Jahresabschluss vor und muss zunächst ihre Bestände ermitteln.",
+    parts: [
+      { id: "p2_1", kind: "matchGroup", points: 3, topic: "Inventur – Inventar – Bilanz",
+        prompt: "Ordnen Sie jeder Beschreibung den passenden Begriff zu.",
+        options: ["Bilanz", "Inventar", "Inventur"],
+        items: [
+          YESNO("i1", "Mengen- und wertmäßige Bestandsaufnahme aller Vermögens- und Schuldenwerte", "Inventur", 1),
+          YESNO("i2", "Ausführliches Verzeichnis aller Vermögens- und Schuldenwerte mit Ermittlung des Reinvermögens", "Inventar", 1),
+          YESNO("i3", "Kurz gefasste Gegenüberstellung von Vermögen und Kapital in Kontoform", "Bilanz", 1)
+        ],
+        feedback: "Überlegen Sie, was zuerst geschieht: erfassen, auflisten oder verkürzt darstellen." },
+      { id: "p2_2", kind: "shortText", points: 1, topic: "Inventurverfahren bei Kreditinstituten",
+        prompt: "Ergänzen Sie: Bei Kreditinstituten wird vorwiegend die ______ Inventur angewandt, weil Forderungen und Verbindlichkeiten aus den Aufzeichnungen der Bank feststehen.",
+        accepted: ["Buchinventur", "buchmäßige Inventur", "buchmäßige Bestandsaufnahme", "buchmäßige Aufnahme", "Buchmäßige"],
+        fuzzy: true,
+        feedback: "Überlegen Sie, ob Geld und Forderungen einer Bank gezählt oder aus den Büchern entnommen werden." },
+      { id: "p2_3", kind: "numberGroup", points: 3, topic: "Reinvermögen und Bilanzgleichung",
+        table: {
+          caption: "Bestände der Bensheimer Bank AG zum 31.12. (in €)",
+          head: ["Vermögen", "Betrag", "Schulden", "Betrag"],
+          rows: [
+            ["Kasse", "40.000,00", "Verbindlichkeiten gegenüber Kreditinstituten", "120.000,00"],
+            ["Guthaben bei der Deutschen Bundesbank", "260.000,00", "Spareinlagen", "700.000,00"],
+            ["Forderungen an Kreditinstitute", "150.000,00", "Sichteinlagen (Kreditoren)", "620.000,00"],
+            ["Forderungen an Kunden (Debitoren)", "1.200.000,00", "", ""],
+            ["Wertpapiere", "300.000,00", "", ""],
+            ["Sachanlagen", "80.000,00", "", ""]
+          ]
+        },
+        prompt: "Berechnen Sie anhand der Tabelle die Summe des Vermögens, die Summe der Schulden und das Reinvermögen (Eigenkapital).",
+        fields: [
+          { id: "sumV", label: "Summe des Vermögens", unit: "€", expected: 2030000.00, tol: 0.02, points: 1, hint: "Alle sechs Vermögensposten addieren." },
+          { id: "sumS", label: "Summe der Schulden", unit: "€", expected: 1440000.00, tol: 0.02, points: 1, hint: "Alle drei Schuldenposten addieren." },
+          { id: "rv", label: "Reinvermögen (Eigenkapital)", unit: "€", expected: 590000.00, tol: 0.02, points: 1,
+            followUp: { formula: "sumV - sumS", partial: 0.5 }, hint: "Reinvermögen = Summe des Vermögens − Summe der Schulden." }
+        ] },
+      { id: "p2_4", kind: "open", points: 2, topic: "Anlässe der Inventur",
+        prompt: "Nennen Sie zwei Anlässe, zu denen eine Inventur durchgeführt werden muss.",
+        criteria: { groups: [{ label: "mögliche Anlässe:", items: ["Gründung bzw. Beginn des Handelsgewerbes", "Schluss eines jeden Geschäftsjahres", "Auflösung des Unternehmens", "Verkauf bzw. Übernahme des Unternehmens"] }],
+                    note: "Andere fachlich sinnvolle Antworten können ebenfalls richtig sein. 1 Punkt je genanntem Anlass." },
+        pointsPerItem: 1 }
+    ]
+  },
+
+  /* ================= AUFGABE 3 · BANKBILANZ (6 P) ================= */
+  {
+    id: "a3", area: "bankbilanz", areaName: "Bankbilanz", maxPoints: 6,
+    situation: "Sie sehen sich die Bilanz der Bensheimer Bank AG an.",
+    parts: [
+      { id: "p3_1", kind: "matchGroup", points: 3, topic: "Aktiv- und Passivposten der Bankbilanz", kurztest: true,
+        prompt: "Auf welcher Bilanzseite der Bensheimer Bank AG erscheinen die folgenden Posten?",
+        options: ["Aktivseite", "Passivseite"],
+        items: [
+          YESNO("i1", "Kasse", "Aktivseite", 0.5),
+          YESNO("i2", "Debitoren", "Aktivseite", 0.5, "Debitoren und Kreditoren (Banksicht)"),
+          YESNO("i3", "Spareinlagen", "Passivseite", 0.5),
+          YESNO("i4", "Kreditoren", "Passivseite", 0.5, "Debitoren und Kreditoren (Banksicht)"),
+          YESNO("i5", "Wertpapiere", "Aktivseite", 0.5),
+          YESNO("i6", "Eigenkapital", "Passivseite", 0.5)
+        ],
+        feedback: "Fragen Sie bei jedem Posten: Gehört der Bank das Vermögen, oder schuldet die Bank das Geld jemand anderem?" },
+      { id: "p3_2", kind: "selectOpen", points: 3, topic: "Banksicht: Spareinlagen", querschnitt: "banksicht",
+        situation: "Ein Kunde der Bensheimer Bank AG hat 5.000,00 € auf seinem Sparkonto.",
+        selectPrompt: "Wie erscheint das Sparguthaben in der Bilanz der Bank?",
+        selectOptions: ["Als Aktivposten (Forderung der Bank)", "Als Passivposten (Verbindlichkeit der Bank)"],
+        correctSelect: "Als Passivposten (Verbindlichkeit der Bank)", selectPoints: 1,
+        openPrompt: "Begründen Sie Ihre Entscheidung aus Sicht der Bank.", openPoints: 2,
+        criteria: { groups: [{ label: "Erwartung:", items: ["Die Bank schuldet dem Kunden das Geld.", "Die Bank muss das Guthaben auf Verlangen zurückzahlen.", "Spareinlagen sind Fremdkapital der Bank, nicht ihr Eigentum."] }],
+                    note: "Andere fachlich sinnvolle Formulierungen sind ebenfalls richtig. 2 Punkte bei vollständiger Begründung." } }
+    ]
+  },
+
+  /* ================= AUFGABE 4 · BESTANDSKONTEN (8 P) ================= */
+  {
+    id: "a4", area: "bestandskonten", areaName: "Bestandskonten", maxPoints: 8,
+    situation: "Die Bensheimer Bank AG führt ihre Bilanzposten als Bestandskonten.",
+    parts: [
+      { id: "p4_1", kind: "numberGroup", points: 3, topic: "Aktivkonto führen",
+        table: { caption: "Konto Kasse (in €)", head: ["Soll", "Betrag", "Haben", "Betrag"],
+                 rows: [["Anfangsbestand", "45.000,00", "Minderung", "6.000,00"],
+                        ["Mehrung", "8.000,00", "Minderung", "2.500,00"],
+                        ["Mehrung", "4.500,00", "Schlussbestand", "?"]] },
+        prompt: "Berechnen Sie die Summe der Sollseite (ohne Schlussbestand), die Summe der Minderungen und den Schlussbestand.",
+        fields: [
+          { id: "sumSoll", label: "Summe der Sollseite", unit: "€", expected: 57500.00, tol: 0.02, points: 1, hint: "Anfangsbestand und beide Mehrungen addieren." },
+          { id: "sumMind", label: "Summe der Minderungen", unit: "€", expected: 8500.00, tol: 0.02, points: 1, hint: "Beide Minderungen im Haben addieren." },
+          { id: "sb", label: "Schlussbestand", unit: "€", expected: 49000.00, tol: 0.02, points: 1,
+            followUp: { formula: "sumSoll - sumMind", partial: 0.5 }, hint: "Beim Aktivkonto: Summe Soll − Minderungen." }
+        ] },
+      { id: "p4_2", kind: "numberGroup", points: 2, topic: "Passivkonto führen",
+        table: { caption: "Konto Spareinlagen (in €)", head: ["Soll", "Betrag", "Haben", "Betrag"],
+                 rows: [["Minderung", "18.000,00", "Anfangsbestand", "300.000,00"],
+                        ["Schlussbestand", "?", "Mehrung", "20.000,00"],
+                        ["", "", "Mehrung", "15.000,00"]] },
+        prompt: "Berechnen Sie die Summe der Habenseite und den Schlussbestand.",
+        fields: [
+          { id: "sumHaben", label: "Summe der Habenseite", unit: "€", expected: 335000.00, tol: 0.02, points: 1, hint: "Anfangsbestand und beide Mehrungen addieren." },
+          { id: "sb", label: "Schlussbestand", unit: "€", expected: 317000.00, tol: 0.02, points: 1,
+            followUp: { formula: "sumHaben - 18000", partial: 0.5 }, hint: "Beim Passivkonto: Summe Haben − Minderungen." }
+        ] },
+      { id: "p4_3", kind: "matchGroup", points: 3, topic: "Bilanzveränderungen", kurztest: true,
+        prompt: "Welche Art der Bilanzveränderung liegt in den folgenden Geschäftsvorfällen der Bensheimer Bank AG vor?",
+        options: ["Aktivtausch", "Aktiv-Passiv-Mehrung", "Aktiv-Passiv-Minderung", "Passivtausch"],
+        items: [
+          YESNO("i1", "Ein Sparer zahlt 2.400,00 € bar auf sein Sparkonto ein.", "Aktiv-Passiv-Mehrung", 1),
+          YESNO("i2", "Ein Kreditor überträgt 7.000,00 € auf sein Sparkonto.", "Passivtausch", 1),
+          YESNO("i3", "Die Bank hebt 25.000,00 € vom Bundesbankkonto bar ab.", "Aktivtausch", 1)
+        ],
+        feedback: "Fragen Sie: Welche Bilanzseiten sind betroffen, und wird die Bilanzsumme größer, kleiner oder bleibt sie gleich?" }
+    ]
+  },
+
+  /* ================= AUFGABE 5 · BUCHUNGSSÄTZE BANK (14 P) ================= */
+  {
+    id: "a5", area: "buchungen", areaName: "Buchungssätze Bank", maxPoints: 14,
+    situation: "Buchen Sie die folgenden Geschäftsvorfälle der Bensheimer Bank AG immer aus Sicht der Bank. Verfügbare Konten: siehe Dropdown-Listen.",
+    parts: [
+      { id: "p5_1", kind: "bookingCheck", points: 6, topic: "Buchungscheck (fünf Schritte)",
+        prompt: "Ein Sparer hebt 800,00 € bar von seinem Sparkonto ab. Führen Sie den Buchungscheck durch.",
+        rows: [
+          { konto: SPAR, art: "Passivkonto", wirkung: "Minderung", seite: "Soll" },
+          { konto: KASSE, art: "Aktivkonto", wirkung: "Minderung", seite: "Haben" }
+        ],
+        columnPoints: { konto: 1, art: 1, wirkung: 1, seite: 1 },
+        booking: { soll: SPAR, haben: KASSE, betrag: 800.00, sollPoints: 1, habenPoints: 1, betragPoints: 0 },
+        artOptions: ["Aktivkonto", "Aufwandskonto", "Ertragskonto", "Passivkonto"],
+        feedbackBySource: "Prüfen Sie nicht, wohin das Geld fließt. Prüfen Sie zuerst, welches Konto sich verändert." },
+      { id: "p5_2", kind: "booking", points: 2, topic: "Aktiv- und Passivmehrung buchen", kurztest: true,
+        prompt: "Ein Kunde mit Guthaben (Kreditor) zahlt 2.500,00 € bar auf sein Konto ein.",
+        booking: { soll: KASSE, haben: KRED, betrag: 2500.00, sollPoints: 1, habenPoints: 1, betragPoints: 0 },
+        sourceHints: { swap: "Soll und Haben sind vertauscht. Prüfen Sie: Aktivmehrung steht im Soll, Passivmehrung im Haben." } },
+      { id: "p5_3", kind: "booking", points: 2, topic: "Debitoren und Kreditoren buchen", querschnitt: "banksicht", kurztest: true,
+        prompt: "Ein Kreditor überweist 3.200,00 € an einen Debitor der Bank.",
+        booking: { soll: KRED, haben: DEB, betrag: 3200.00, sollPoints: 1, habenPoints: 1, betragPoints: 0 },
+        sourceHints: { swap: "Soll und Haben sind vertauscht. Der Kreditor hat ein Guthaben (Passivkonto), der Debitor schuldet der Bank Geld (Aktivkonto). Beide Konten werden gemindert." } },
+      { id: "p5_4", kind: "booking", points: 2, topic: "Passivtausch",
+        prompt: "Ein Kreditor überträgt 4.000,00 € von seinem Kontokorrentkonto auf sein Sparkonto.",
+        booking: { soll: KRED, haben: SPAR, betrag: 4000.00, sollPoints: 1, habenPoints: 1, betragPoints: 0 },
+        sourceHints: { swap: "Beide Konten sind Passivkonten. Die Minderung steht im Soll, die Mehrung im Haben." } },
+      { id: "p5_5", kind: "booking", points: 2, topic: "Aktivtausch",
+        prompt: "Die Bank kauft Betriebs- und Geschäftsausstattung für 9.600,00 € und bezahlt über ihr Konto bei der Deutschen Bundesbank.",
+        booking: { soll: BGA, haben: DBB, betrag: 9600.00, sollPoints: 1, habenPoints: 1, betragPoints: 0 },
+        sourceHints: { swap: "Beide Konten sind Aktivkonten. Die Mehrung (BGA) steht im Soll, die Minderung (Bundesbankguthaben) im Haben." } }
+    ]
+  },
+
+  /* ================= AUFGABE 6 · ERFOLGSKONTEN (12 P) ================= */
+  {
+    id: "a6", area: "erfolgskonten", areaName: "Erfolgskonten", maxPoints: 12,
+    situation: "Die Bensheimer Bank AG erfasst ihre Aufwendungen und Erträge auf Erfolgskonten. Buchen Sie immer aus Sicht der Bank.",
+    parts: [
+      { id: "p6_1", kind: "matchGroup", points: 3, topic: "Aufwand oder Ertrag (Banksicht)", querschnitt: "banksicht", kurztest: true,
+        prompt: "Liegt für die Bensheimer Bank AG ein Aufwand oder ein Ertrag vor?",
+        options: ["Aufwand", "Ertrag"],
+        items: [
+          YESNO("i1", "Zinsgutschrift auf einem Sparkonto eines Kunden", "Aufwand", 0.5),
+          YESNO("i2", "Zinsbelastung auf dem Konto eines Debitors", "Ertrag", 0.5),
+          YESNO("i3", "Gehaltszahlung an die Mitarbeiter der Bank", "Aufwand", 0.5),
+          YESNO("i4", "Kontoführungsgebühr, die ein Debitor zahlt", "Ertrag", 0.5),
+          YESNO("i5", "Rechnung für die IT-Wartung", "Aufwand", 0.5),
+          YESNO("i6", "Zinsgutschrift auf einem Kontokorrentkonto eines Kreditors", "Aufwand", 0.5)
+        ],
+        feedback: "Fragen Sie: Wer zahlt hier an wen, und hat die Bank danach mehr oder weniger Eigenkapital?" },
+      { id: "p6_2a", kind: "booking", points: 2, topic: "Zinsaufwand (Banksicht)", querschnitt: "banksicht",
+        prompt: "Die Bank schreibt Sparern 1.250,00 € Zinsen auf ihren Sparkonten gut.",
+        booking: { soll: ZA, haben: SPAR, betrag: 1250.00, sollPoints: 1, habenPoints: 1, betragPoints: 0 },
+        sourceHints: { swap: "Aus Sicht der Bank sind gutgeschriebene Zinsen Aufwand. Aufwand steht im Soll, die Spareinlagen (Passivmehrung) im Haben." } },
+      { id: "p6_2b", kind: "booking", points: 2, topic: "Zinsertrag (Banksicht)", querschnitt: "banksicht",
+        prompt: "Die Bank belastet einem Debitor 3.480,00 € Kreditzinsen.",
+        booking: { soll: DEB, haben: ZE, betrag: 3480.00, sollPoints: 1, habenPoints: 1, betragPoints: 0 },
+        sourceHints: { swap: "Der Debitor schuldet der Bank mehr (Aktivmehrung im Soll). Der Zinsertrag steht im Haben." } },
+      { id: "p6_2c", kind: "booking", points: 2, topic: "Personalaufwand",
+        prompt: "Die Bank überweist Gehälter von 52.000,00 € auf die Kontokorrentkonten ihrer Mitarbeiter (Kreditoren).",
+        booking: { soll: PERS, haben: KRED, betrag: 52000.00, sollPoints: 1, habenPoints: 1, betragPoints: 0 },
+        sourceHints: { swap: "Personalaufwand steht im Soll. Die Guthaben der Mitarbeiter steigen (Passivmehrung im Haben)." } },
+      { id: "p6_3", kind: "selectOpen", points: 3, topic: "Sachaufwand und Erfolgskonten abgrenzen",
+        situation: "Eine Auszubildende bucht die Rechnung der IT-Wartung über 4.200,00 €, die über das Konto bei der Deutschen Bundesbank bezahlt wird, so: „Guthaben bei der Deutschen Bundesbank an Sachaufwendungen 4.200,00 €“.",
+        selectPrompt: "Beurteilen Sie den Buchungssatz.",
+        selectOptions: ["Der Buchungssatz ist richtig", "Der Buchungssatz ist falsch"],
+        correctSelect: "Der Buchungssatz ist falsch", selectPoints: 1,
+        openPrompt: "Begründen Sie Ihre Beurteilung und nennen Sie den richtigen Buchungssatz.", openPoints: 2,
+        criteria: { groups: [{ label: "Erwartung:", items: ["Sachaufwand vermindert das Eigenkapital und steht im Soll.", "Das Bundesbankguthaben ist ein Aktivkonto und nimmt ab (Minderung im Haben).", "Richtig: Sachaufwendungen an Guthaben bei der Deutschen Bundesbank 4.200,00 €."] }],
+                    note: "Andere fachlich sinnvolle Formulierungen sind ebenfalls richtig. 1 Punkt für die Begründung, 1 Punkt für den richtigen Buchungssatz." } }
+    ]
+  },
+
+  /* ================= AUFGABE 7 · GuV-GRUNDLAGEN (6 P) ================= */
+  {
+    id: "a7", area: "guv", areaName: "GuV-Grundlagen", maxPoints: 6,
+    situation: "Zum Jahresende liegen die folgenden Salden der Erfolgskonten der Bensheimer Bank AG vor (in €). Das Gewinn- und Verlustkonto (GuV) ist das Sammelkonto für Aufwendungen und Erträge.",
+    parts: [
+      { id: "p7_1", kind: "numberGroup", points: 3, topic: "Gewinn und Verlust berechnen",
+        table: { caption: "Salden der Erfolgskonten (in €)", head: ["Aufwandskonto", "Betrag", "Ertragskonto", "Betrag"],
+                 rows: [["Zinsaufwendungen", "52.400,00", "Zinserträge", "118.300,00"],
+                        ["Personalaufwendungen", "38.900,00", "Provisionserträge", "21.600,00"],
+                        ["Sachaufwendungen", "15.700,00", "", ""]] },
+        prompt: "Berechnen Sie die Summe der Aufwendungen, die Summe der Erträge und das Jahresergebnis (Gewinn positiv, Verlust negativ).",
+        fields: [
+          { id: "sumA", label: "Summe der Aufwendungen", unit: "€", expected: 107000.00, tol: 0.02, points: 1, hint: "Alle drei Aufwandskonten addieren." },
+          { id: "sumE", label: "Summe der Erträge", unit: "€", expected: 139900.00, tol: 0.02, points: 1, hint: "Beide Ertragskonten addieren." },
+          { id: "erg", label: "Jahresergebnis", unit: "€", expected: 32900.00, tol: 0.02, points: 1,
+            followUp: { formula: "sumE - sumA", partial: 0.5 }, hint: "Jahresergebnis = Summe der Erträge − Summe der Aufwendungen." }
+        ] },
+      { id: "p7_2", kind: "matchGroup", points: 2, topic: "Seiten der GuV",
+        prompt: "Auf welcher Seite des GuV-Kontos stehen die folgenden Größen?",
+        options: ["Habenseite", "Sollseite"],
+        items: [
+          YESNO("i1", "Aufwendungen", "Sollseite", 1),
+          YESNO("i2", "Erträge", "Habenseite", 1)
+        ],
+        feedback: "Überlegen Sie, auf welcher Seite die Aufwendungen und Erträge in den Erfolgskonten stehen." },
+      { id: "p7_3", kind: "choice", points: 1, topic: "Wirkung auf das Eigenkapital", kurztest: true,
+        prompt: "Die Erträge der Bank sind größer als ihre Aufwendungen. Welche Aussage zur Wirkung auf das Eigenkapital ist richtig?",
+        options: ["Das Eigenkapital sinkt grundsätzlich, weil Erträge ausgezahlt werden.", "Das Eigenkapital steigt grundsätzlich, weil ein Gewinn entstanden ist.", "Das Eigenkapital bleibt unverändert, weil Erfolgskonten nichts mit ihm zu tun haben.", "Das Eigenkapital sinkt, weil der Gewinn ein Aufwand ist.", "Das Eigenkapital wird zur Schuld der Bank gegenüber den Kunden."],
+        correct: 1,
+        feedback: "Erinnern Sie sich: Erfolgskonten sind Unterkonten des Eigenkapitals. Was bewirkt ein Überschuss der Erträge?" }
+    ]
+  }
+];
+
+
+
+/* =====================================================================
+   3) ENGINE – ab hier normalerweise keine inhaltlichen Änderungen nötig
+   Bewertung, Parser, Timer, Speicherung, Navigation, Diagnose.
+   ===================================================================== */
+const STORAGE_KEY = CONFIG.trainerId + "__state";
+const QUESTIONS = TASKS;
+const TOL_EURO = CONFIG.rules.tolEuro;
+
+const $ = sel => document.querySelector(sel);
+const $$ = sel => Array.from(document.querySelectorAll(sel));
+const clone = o => JSON.parse(JSON.stringify(o));
+function round2(n){ return Math.round((n + Number.EPSILON) * 100) / 100; }
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
+}
+
+// Kleiner DOM-Helfer: h("div", {class:"x", text:"…", onclick:fn}, kind1, kind2 …)
+function h(tag, props, ...kids){
+  const e = document.createElement(tag);
+  if(props){
+    Object.keys(props).forEach(k => {
+      const v = props[k];
+      if(v === null || v === undefined || v === false) return;
+      if(k === "class") e.className = v;
+      else if(k === "text") e.textContent = v;
+      else if(k.indexOf("on") === 0) e.addEventListener(k.slice(2), v);
+      else if(v === true) e.setAttribute(k, "");
+      else e.setAttribute(k, v);
+    });
+  }
+  kids.flat().forEach(c => {
+    if(c === null || c === undefined || c === false) return;
+    e.appendChild(typeof c === "string" ? document.createTextNode(c) : c);
+  });
+  return e;
+}
+
+/* ---------------------------------------------------------------------
+   MODI (Klassenarbeitscheck / Kurztest)
+   --------------------------------------------------------------------- */
+function modeCfg(){ return CONFIG.modes[state.mode] || CONFIG.modes.klassenarbeit; }
+// Aufgaben (mit gefilterten Teilaufgaben) des gewählten Modus
+function activeTasks(modeKey){
+  const m = CONFIG.modes[modeKey || state.mode] || CONFIG.modes.klassenarbeit;
+  return QUESTIONS
+    .map(t => Object.assign({}, t, { parts: t.parts.filter(p => m.onlyFlag ? p[m.onlyFlag] === true : true) }))
+    .filter(t => t.parts.length > 0);
+}
+function activeParts(){
+  const out = [];
+  activeTasks().forEach(t => t.parts.forEach(p => out.push(p)));
+  return out;
+}
+function modeMaxPoints(modeKey){
+  let s = 0;
+  activeTasks(modeKey).forEach(t => t.parts.forEach(p => { s += p.points; }));
+  return round2(s);
+}
+function taskNumber(t){ return parseInt(String(t.id).replace(/\D/g, ""), 10); }
+// Nummer der Teilaufgabe aus der ID: p6_2a -> "6.2 a)"
+function partLabel(p){
+  const m = /^p(\d+)_(\d+)([a-z]?)$/.exec(p.id);
+  if(!m) return p.id;
+  return m[1] + "." + m[2] + (m[3] ? " " + m[3] + ")" : "");
+}
+const LETTERS = ["A", "B", "C", "D", "E", "F"];
+
+/* ---------------------------------------------------------------------
+   ZUSTAND / SPEICHERUNG / VERSIONSSICHERHEIT
+   --------------------------------------------------------------------- */
+function freshPartState(p){
+  return {
+    textValue: "", fieldValues: {}, selectValue: "", matchValues: {}, choiceValue: null,
+    shortTextValue: "",
+    bk: { soll: "", haben: "", betrag: "" },
+    bc: { rows: (p.rows || []).map(() => ({ konto: "", art: "", wirkung: "", seite: "" })) },
+    revealed: false, checked: false, selfAssessment: null, confidence: null,
+    earnedPoints: 0, correctness: null, res: null, attempts: 0,
+    // Diagnose-Sperre: nur der erste Versuch zählt
+    diagLocked: false, diagEarned: null, diagCorrectness: null, diagConfidence: null,
+    diagRes: null, diagAnswer: null, diagSelectLocked: false, diagSelectFraction: null
+  };
+}
+function createFreshState(){
+  const parts = {};
+  QUESTIONS.forEach(t => t.parts.forEach(p => { parts[p.id] = freshPartState(p); }));
+  return {
+    trainerId: CONFIG.trainerId, version: CONFIG.version,
+    started: false, finished: false, mode: "klassenarbeit", tag: "",
+    currentTask: 0, startedAt: null, endAt: null, finishedAt: null, usedSeconds: null,
+    marks: {}, parts: parts
+  };
+}
+
+let storageBlocked = false;   // solange ein Versionsdialog offen ist, wird nichts überschrieben
+let pendingOldRaw = null;     // alter Speicherstand (Versionsdialog)
+
+// Liefert { state } bei passendem Stand, { old: raw } bei älterer/ungültiger Version, {} wenn nichts gespeichert
+function loadStored(){
+  let raw = null;
+  try{ raw = localStorage.getItem(STORAGE_KEY); }catch(e){ return {}; }
+  if(!raw) return {};
+  let parsed;
+  try{ parsed = JSON.parse(raw); }catch(e){ return { old: raw }; }
+  if(!parsed || typeof parsed !== "object" || !parsed.parts) return { old: raw };
+  const ids = [];
+  QUESTIONS.forEach(t => t.parts.forEach(p => ids.push(p.id)));
+  const structureOk = ids.every(id => Object.prototype.hasOwnProperty.call(parsed.parts, id))
+                      && Object.keys(parsed.parts).length === ids.length;
+  if(parsed.trainerId !== CONFIG.trainerId || parsed.version !== CONFIG.version || !structureOk){
+    return { old: raw };
+  }
+  if(!CONFIG.modes[parsed.mode]) parsed.mode = "klassenarbeit";
+  return { state: parsed };
+}
+
+let state;
+(function initState(){
+  const stored = loadStored();
+  if(stored.state){ state = stored.state; }
+  else {
+    state = createFreshState();
+    if(stored.old){ storageBlocked = true; pendingOldRaw = stored.old; }
+  }
+})();
+
+function setSaveStatus(ok){
+  const el = $("#saveStatus");
+  if(el) el.textContent = ok ? "gespeichert" : "Speichern nicht möglich – bitte Seite nicht schließen";
+}
+function saveState(){
+  if(storageBlocked) return;
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    setSaveStatus(true);
+  }catch(e){
+    setSaveStatus(false);
+  }
+}
+
+// Rückblick-Modus (Backlink): reiner Navigationszustand, wird nicht gespeichert
+let reviewTaskIndex = null;
+let reviewHighlightParts = [];
+let reviewScrollPending = false;
+function getActiveTaskIndex(){ return state.finished ? reviewTaskIndex : state.currentTask; }
+
+function snapshotAnswer(st){
+  return clone({ textValue: st.textValue, fieldValues: st.fieldValues, selectValue: st.selectValue,
+                 matchValues: st.matchValues, choiceValue: st.choiceValue, shortTextValue: st.shortTextValue,
+                 bk: st.bk, bc: st.bc });
+}
+// Erster Versuch: Wertung, Ergebnisdetails und Antwort einfrieren (wirkt nur einmal)
+function lockDiagnosis(st){
+  if(!st.diagLocked){
+    st.diagEarned = round2(st.earnedPoints);
+    st.diagCorrectness = st.correctness;
+    st.diagRes = st.res ? clone(st.res) : null;
+    if(!st.diagAnswer) st.diagAnswer = snapshotAnswer(st);
+    st.diagLocked = true;
+  }
+}
+function lockConfidence(st){
+  if(st.diagConfidence === null && st.confidence !== null) st.diagConfidence = st.confidence;
+}
+
+/* ---------------------------------------------------------------------
+   ZAHLENPARSER (Standard Abschnitt 21/22)
+   --------------------------------------------------------------------- */
+function parseNum(raw){
+  if(raw === null || raw === undefined) return NaN;
+  let s = String(raw).trim();
+  if(s === "") return NaN;
+  s = s.replace(/[−–—‒‐]/g, "-");      // Unicode-Minus normalisieren
+  s = s.replace(/EUR/gi, "").replace(/[€%]/g, "");              // Währung/Prozent ignorieren
+  s = s.replace(/[\s  ]+/g, "");                      // Leerzeichen ignorieren
+  if(s === "") return NaN;
+  const hasComma = s.indexOf(",") >= 0, hasDot = s.indexOf(".") >= 0;
+  if(hasComma && hasDot){
+    if(s.lastIndexOf(",") > s.lastIndexOf(".")) s = s.replace(/\./g, "").replace(",", ".");   // 1.234,56
+    else s = s.replace(/,/g, "");                                                              // 1,234.56
+  } else if(hasComma){
+    if((s.match(/,/g) || []).length > 1) return NaN;
+    s = s.replace(",", ".");                                                                   // 12,50
+  } else if(hasDot){
+    if((s.match(/\./g) || []).length > 1){
+      if(/^[-+]?\d{1,3}(\.\d{3})+$/.test(s)) s = s.replace(/\./g, "");                         // 1.200.000
+      else return NaN;
+    } else {
+      const decimals = s.length - s.lastIndexOf(".") - 1;
+      if(decimals === 3 && /^[-+]?\d{1,3}\.\d{3}$/.test(s)) s = s.replace(".", "");           // 12.500 -> 12500
+    }
+  }
+  if(!/^[-+]?(\d+(\.\d*)?|\.\d+)$/.test(s)) return NaN;
+  const v = parseFloat(s);
+  return isFinite(v) ? v : NaN;
+}
+function fmtPlain(n){ return n.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+function fmtEuro(n){ return fmtPlain(n) + " €"; }
+function fmtByUnit(n, unit){ return unit === "€" ? fmtEuro(n) : (unit === "%" ? fmtPlain(n) + " %" : fmtPlain(n)); }
+
+/* ---------------------------------------------------------------------
+   FACHBEGRIFFE FEHLERTOLERANT PRÜFEN (Standard Abschnitt 23)
+   --------------------------------------------------------------------- */
+function levenshtein(a, b){
+  const m = a.length, n = b.length;
+  const d = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
+  for(let i = 0; i <= m; i++) d[i][0] = i;
+  for(let j = 0; j <= n; j++) d[0][j] = j;
+  for(let i = 1; i <= m; i++){
+    for(let j = 1; j <= n; j++){
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + cost);
+    }
+  }
+  return d[m][n];
+}
+function normalizeTerm(s){
+  let t = String(s || "").toLowerCase().trim().replace(/\s+/g, " ");
+  t = t.replace(/^(der|die|das|ein|eine|einer|einem|den)\s+/, "");   // führende Artikel
+  return t.replace(/[-\s]/g, "");
+}
+function fuzzyMatch(input, target){
+  const a = normalizeTerm(input), b = normalizeTerm(target);
+  if(a === "" || b === "") return false;
+  if(a === b) return true;
+  // vorsichtige Toleranz: kurze Begriffe exakt, mittlere 1 Fehler, lange höchstens 2
+  const allowed = b.length >= 10 ? 2 : (b.length >= 6 ? 1 : 0);
+  return allowed > 0 && levenshtein(a, b) <= allowed;
+}
+
+/* ---------------------------------------------------------------------
+   BEWERTUNG
+   --------------------------------------------------------------------- */
+function ratioCorrectness(earned, max){
+  const r = max > 0 ? earned / max : 0;
+  return r >= 0.8 ? true : (r < 0.5 ? false : "mid");
+}
+
+// --- Multiple Choice ---
+function gradeChoice(p, st){
+  const ok = st.choiceValue === p.correct;
+  st.res = { ok: ok };
+  st.earnedPoints = ok ? p.points : 0;
+  st.correctness = ok;
+}
+
+// --- Zuordnung per Dropdown (Punkte und Unterthema je Zeile) ---
+function gradeMatchGroup(p, st){
+  const items = {};
+  let total = 0;
+  p.items.forEach(it => {
+    const chosen = st.matchValues[it.id] || "";
+    const ok = chosen === it.correct;
+    const earned = ok ? it.points : 0;
+    items[it.id] = { chosen: chosen, ok: ok, earned: earned };
+    total += earned;
+  });
+  st.res = { items: items };
+  st.earnedPoints = round2(total);
+  st.correctness = ratioCorrectness(st.earnedPoints, p.points);
+}
+
+// --- Kurzantwort (Fachbegriff) ---
+function gradeShortText(p, st){
+  const val = st.shortTextValue || "";
+  const ok = (p.accepted || []).some(term => fuzzyMatch(val, term));
+  st.res = { ok: ok };
+  st.earnedPoints = ok ? p.points : 0;
+  st.correctness = ok;
+}
+
+// --- Rechenaufgabe mit Folgefehlerregel ---
+// FOLGEFEHLER: followUp.formula nutzt Feld-IDs derselben Teilaufgabe, ersetzt durch die
+// EIGENEN Eingaben des Lernenden. Passt der eigene Wert zu dieser Rechnung, gibt es 50 %.
+function evalFollowFormula(formula, st){
+  if(typeof formula !== "string" || !/^[\w\s+\-*/().,]+$/.test(formula)) return null;
+  let missing = false;
+  const expr = formula.replace(/[A-Za-z_]\w*/g, name => {
+    const v = parseNum(st.fieldValues[name]);
+    if(isNaN(v)){ missing = true; return "0"; }
+    return "(" + v + ")";
+  });
+  if(missing) return null;
+  try{
+    const v = Function('"use strict"; return (' + expr + ');')();
+    return (typeof v === "number" && isFinite(v)) ? round2(v) : null;
+  }catch(e){ return null; }
+}
+function gradeNumberGroup(p, st){
+  const fields = {};
+  let total = 0;
+  p.fields.forEach(f => {
+    const val = parseNum(st.fieldValues[f.id]);
+    let status, earned;
+    if(isNaN(val)){
+      status = String(st.fieldValues[f.id] || "").trim() === "" ? "empty" : "invalid"; earned = 0;
+    } else if(Math.abs(val - f.expected) <= f.tol){
+      status = "correct"; earned = f.points;
+    } else {
+      const follow = f.followUp ? evalFollowFormula(f.followUp.formula, st) : null;
+      if(follow !== null && Math.abs(val - follow) <= Math.max(f.tol, 0.03)){
+        status = "partial"; earned = round2(f.points * (f.followUp.partial !== undefined ? f.followUp.partial : 0.5));
+      } else { status = "wrong"; earned = 0; }
+    }
+    fields[f.id] = { status: status, earned: earned };
+    total += earned;
+  });
+  st.res = { fields: fields };
+  st.earnedPoints = round2(total);
+  st.correctness = ratioCorrectness(st.earnedPoints, p.points);
+}
+
+// --- Buchungssatz (Soll an Haben, Betrag ohne Punkte) ---
+function evalBooking(b, bk){
+  const sollOk = bk.soll === b.soll, habenOk = bk.haben === b.haben;
+  const raw = String(bk.betrag || "").trim();
+  const val = parseNum(raw);
+  const betragEmpty = raw === "";
+  const betragOk = !isNaN(val) && Math.abs(val - b.betrag) <= TOL_EURO;
+  const swap = !!bk.soll && !!bk.haben && bk.soll === b.haben && bk.haben === b.soll;
+  const earned = (sollOk ? b.sollPoints : 0) + (habenOk ? b.habenPoints : 0) + (betragOk ? (b.betragPoints || 0) : 0);
+  return { sollOk: sollOk, habenOk: habenOk, betragOk: betragOk, betragEmpty: betragEmpty, swap: swap, earned: earned };
+}
+function gradeBookingPart(p, st){
+  const r = evalBooking(p.booking, st.bk);
+  st.res = { booking: r };
+  st.earnedPoints = round2(r.earned);
+  st.correctness = ratioCorrectness(st.earnedPoints, p.points);
+}
+
+// --- Buchungscheck in fünf Schritten ---
+// Zeilenzuordnung: Zeilen werden über das gewählte Konto zugeordnet. Zeilen, deren Konto zu keiner
+// Musterzeile passt, werden in Reihenfolge den noch offenen Musterzeilen zugeordnet. Eine Spalte
+// (Konto, Kontoart, Veränderung, Seite) bringt den Punkt nur, wenn alle Zeilen in dieser Spalte stimmen.
+function gradeBookingCheck(p, st){
+  const exp = p.rows, got = st.bc.rows;
+  const pair = new Array(exp.length).fill(-1);
+  const used = new Array(got.length).fill(false);
+  exp.forEach((e, i) => {
+    const j = got.findIndex((g, jj) => !used[jj] && g.konto && g.konto === e.konto);
+    if(j >= 0){ pair[i] = j; used[j] = true; }
+  });
+  exp.forEach((e, i) => {
+    if(pair[i] >= 0) return;
+    const j = got.findIndex((g, jj) => !used[jj]);
+    if(j >= 0){ pair[i] = j; used[j] = true; }
+  });
+  const cols = {};
+  let total = 0;
+  ["konto", "art", "wirkung", "seite"].forEach(c => {
+    const ok = exp.every((e, i) => pair[i] >= 0 && got[pair[i]][c] === e[c]);
+    const pts = (p.columnPoints && p.columnPoints[c]) || 0;
+    cols[c] = { ok: ok, earned: ok ? pts : 0 };
+    total += cols[c].earned;
+  });
+  const b = evalBooking(p.booking, st.bk);
+  total += b.earned;
+  st.res = { cols: cols, booking: b };
+  st.earnedPoints = round2(total);
+  st.correctness = ratioCorrectness(st.earnedPoints, p.points);
+}
+
+/* ---------------------------------------------------------------------
+   DIAGNOSE: Bereiche, Unterthemen, Querschnitt, Fehlvorstellungen
+   --------------------------------------------------------------------- */
+// Zerlegt eine Teilaufgabe in Bewertungsstücke (Unterthema, Punkte) – nutzt nur eingefrorene Werte
+function partSlices(p, st){
+  const r = st.diagRes;
+  if(p.kind === "matchGroup"){
+    return p.items.map(it => ({
+      topic: it.topic || p.topic, max: it.points,
+      earned: (r && r.items && r.items[it.id]) ? r.items[it.id].earned : 0,
+      bank: p.querschnitt === "banksicht" || /Banksicht/.test(it.topic || "")
+    }));
+  }
+  if(p.kind === "numberGroup"){
+    return p.fields.map(f => ({
+      topic: f.topic || p.topic, max: f.points,
+      earned: (r && r.fields && r.fields[f.id]) ? r.fields[f.id].earned : 0,
+      bank: p.querschnitt === "banksicht"
+    }));
+  }
+  return [{ topic: p.topic, max: p.points, earned: st.diagEarned || 0, bank: p.querschnitt === "banksicht" }];
+}
+
+function computeScores(){
+  const areas = {}, areaOrder = [], topics = {};
+  const bank = { earned: 0, max: 0, partIds: [], weakPartIds: [] };
+  const misconceptions = [], unstable = [];
+  let totalEarned = 0, totalMax = 0;
+
+  activeTasks().forEach(t => {
+    if(!areas[t.area]){
+      areas[t.area] = { key: t.area, name: t.areaName, earned: 0, max: 0, misc: 0, unstable: 0, taskIdx: -1 };
+      areaOrder.push(t.area);
+    }
+    t.parts.forEach(p => {
+      const st = state.parts[p.id];
+      const isMisc = st.diagConfidence === "sicher" && st.diagCorrectness === false;
+      const isUnst = st.diagConfidence === "geraten" && st.diagCorrectness === true;
+      const slices = partSlices(p, st);
+      let partEarned = 0, partBank = false, bankLoss = false;
+      slices.forEach(s => {
+        partEarned += s.earned;
+        if(!topics[s.topic]) topics[s.topic] = { name: s.topic, earned: 0, max: 0, misc: 0, unstable: 0 };
+        topics[s.topic].earned += s.earned; topics[s.topic].max += s.max;
+        if(s.bank){ bank.earned += s.earned; bank.max += s.max; partBank = true; if(s.earned < s.max) bankLoss = true; }
+      });
+      if(partBank){ bank.partIds.push(p.id); if(bankLoss) bank.weakPartIds.push(p.id); }
+      if(isMisc && topics[p.topic]){ topics[p.topic].misc += 1; }
+      if(isUnst && topics[p.topic]){ topics[p.topic].unstable += 1; }
+      areas[t.area].earned += partEarned; areas[t.area].max += p.points;
+      if(isMisc){ areas[t.area].misc += 1; misconceptions.push({ partId: p.id, label: partLabel(p), topic: p.topic, area: t.areaName }); }
+      if(isUnst){ areas[t.area].unstable += 1; unstable.push({ partId: p.id, label: partLabel(p), topic: p.topic }); }
+      totalEarned += partEarned; totalMax += p.points;
+    });
+  });
+  Object.keys(areas).forEach(k => { areas[k].earned = round2(areas[k].earned); });
+  Object.keys(topics).forEach(k => { topics[k].earned = round2(topics[k].earned); topics[k].max = round2(topics[k].max); });
+  bank.earned = round2(bank.earned); bank.max = round2(bank.max);
+  return { areas: areas, areaOrder: areaOrder, topics: topics, bank: bank,
+           misconceptions: misconceptions, unstable: unstable,
+           totalEarned: round2(totalEarned), totalMax: round2(totalMax) };
+}
+function pctOf(e, m){ return m > 0 ? Math.round((e / m) * 100) : 0; }
+function bandFor(pct){
+  if(pct >= CONFIG.bands.sicher) return "green";
+  if(pct >= CONFIG.bands.festigen) return "yellow";
+  return "red";
+}
+const BAND_TEXT = { green: "Sicher", yellow: "Noch festigen", red: "Übungsschwerpunkt" };
+
+function topicOrderList(scores){
+  return Object.keys(LEARN_HINTS).filter(n => scores.topics[n] && scores.topics[n].max > 0);
+}
+// Lernplan: die drei schwächsten Unterthemen (nur Themen unter 100 %)
+function weakestTopics(scores){
+  return topicOrderList(scores)
+    .map(n => { const t = scores.topics[n]; return { name: n, pct: pctOf(t.earned, t.max), lost: t.max - t.earned, earned: t.earned, max: t.max, misc: t.misc, unstable: t.unstable }; })
+    .filter(t => t.pct < 100)
+    .sort((a, b) => (a.pct - b.pct) || (b.lost - a.lost))
+    .slice(0, 3);
+}
+
+/* ---------------------------------------------------------------------
+   TIMER (Wanduhr-Zeit: übersteht Reload) – sperrt niemals
+   --------------------------------------------------------------------- */
+let timerInterval = null;
+function remainingSeconds(){
+  if(!state.started) return modeCfg().minutes * 60;
+  const ref = state.finished && state.finishedAt ? state.finishedAt : Date.now();
+  return Math.max(0, Math.ceil((state.endAt - ref) / 1000));
+}
+function fmtClock(s){
+  s = Math.max(0, Math.floor(s));
+  return String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0");
+}
+function startTimerLoop(){
+  if(timerInterval) return;
+  timerInterval = setInterval(renderTimer, 1000);
+}
+function stopTimerLoop(){
+  if(timerInterval){ clearInterval(timerInterval); timerInterval = null; }
+}
+function renderTimer(){
+  const box = $("#timerBox"), val = $("#timerValue"), slot = $("#timeBannerSlot");
+  if(!box || !val || !slot) return;
+  const s = remainingSeconds();
+  val.textContent = fmtClock(s);
+  box.classList.remove("warn", "critical");
+  slot.innerHTML = "";
+  if(!state.started || state.finished) return;
+  const w = modeCfg().timerWarnMinutes;
+  let level = null;
+  if(s <= 0) level = "red";
+  else if(w.orange !== null && s <= w.orange * 60) level = "orange";
+  else if(w.yellow !== null && s <= w.yellow * 60) level = "yellow";
+  else if(w.hint !== null && s <= w.hint * 60) level = "neutral";
+  if(!level) return;
+  let text, cls;
+  if(level === "red"){ box.classList.add("critical"); cls = "red";
+    text = "Die vorgesehene Bearbeitungszeit ist abgelaufen. Beenden Sie die aktuelle Aufgabe und erstellen Sie anschließend Ihre Auswertung."; }
+  else if(level === "orange"){ box.classList.add("critical"); cls = "orange";
+    text = "Noch " + w.orange + " Minuten Bearbeitungszeit. Kommen Sie zu einem Ergebnis."; }
+  else if(level === "yellow"){ box.classList.add("warn"); cls = "yellow";
+    text = "Noch " + w.yellow + " Minuten Bearbeitungszeit."; }
+  else { cls = "neutral"; text = "Noch " + w.hint + " Minuten Bearbeitungszeit."; }
+  slot.appendChild(h("div", { class: "time-banner " + cls, role: "status", text: text }));
+}
+
+/* ---------------------------------------------------------------------
+   DIALOG (statt confirm/alert – zuverlässig auf iPad)
+   --------------------------------------------------------------------- */
+function openDialog(opts){
+  closeDialog();
+  const body = h("div", { class: "dialog", role: "dialog", "aria-modal": "true", "aria-labelledby": "dlgTitle" },
+    h("h3", { id: "dlgTitle", text: opts.title }),
+    (opts.paragraphs || []).map(t => h("p", { text: t })),
+    opts.items && opts.items.length ? h("ul", null, opts.items.map(i => h("li", null, i))) : null,
+    h("div", { class: "btn-row" }, (opts.buttons || []).map(b =>
+      h("button", { class: "btn " + (b.kind || ""), text: b.label, onclick: () => { closeDialog(); if(b.onclick) b.onclick(); } })))
+  );
+  const overlay = h("div", { class: "dialog-overlay", id: "dialogOverlay" }, body);
+  document.body.appendChild(overlay);
+  const first = overlay.querySelector("button");
+  if(first) first.focus();
+}
+function closeDialog(){
+  const o = document.getElementById("dialogOverlay");
+  if(o) o.remove();
+}
+
+/* =====================================================================
+   4) UI – RENDER-FUNKTIONEN
+   ===================================================================== */
+function show(id){ document.getElementById(id).style.display = ""; }
+function hide(id){ document.getElementById(id).style.display = "none"; }
+
+function render(){
+  const autosave = $("#autosaveNote");
+  if(!state.started){
+    show("screenStart"); hide("screenTasks"); hide("screenResults");
+    autosave.style.display = "none";
+    renderStart();
+  } else if(state.finished && reviewTaskIndex === null){
+    hide("screenStart"); hide("screenTasks"); show("screenResults");
+    renderResults();
+    autosave.style.display = "none";
+  } else if(state.finished){
+    hide("screenStart"); show("screenTasks"); hide("screenResults");
+    renderTask(reviewTaskIndex);
+    autosave.style.display = "none";
+  } else {
+    hide("screenStart"); show("screenTasks"); hide("screenResults");
+    renderTask(state.currentTask);
+    autosave.style.display = "block";
+  }
+  renderTimer();
+}
+function rerender(){
+  const y = window.scrollY;
+  render();
+  window.scrollTo(0, y);
+}
+
+/* ---------- Startseite ---------- */
+function renderStart(){
+  const grid = $("#modeGrid");
+  grid.innerHTML = "";
+  Object.keys(CONFIG.modes).forEach(key => {
+    const m = CONFIG.modes[key];
+    const n = activeTasks(key).length;
+    const input = h("input", { type: "radio", name: "modeSel", value: key, checked: state.mode === key,
+      onchange: () => { state.mode = key; saveState(); renderStart(); renderTimer(); } });
+    grid.appendChild(h("label", { class: "mode-card" },
+      h("span", { class: "mode-title" }, input, m.label),
+      h("span", { class: "mode-sub", text: m.minutes + " Minuten · " + modeMaxPoints(key) + " Diagnosepunkte · " + n + " Aufgabenbereiche" })));
+  });
+  const info = $("#infoGrid");
+  info.innerHTML = "";
+  const m = modeCfg();
+  [ m.minutes + " Minuten Bearbeitungszeit", modeMaxPoints() + " Diagnosepunkte",
+    activeTasks().length + " Aufgabenbereiche",
+    "Rechnen und Buchen", "Zuordnen und Begründen", "Buchungscheck in fünf Schritten",
+    "Durchgehende Situation: Bensheimer Bank AG" ].forEach(t => info.appendChild(h("div", { class: "info-item", text: t })));
+  $("#studentTagStart").value = state.tag || "";
+  $("#btnStart").disabled = !$("#chkSelfDirected").checked || storageBlocked;
+}
+
+/* ---------- Aufgabenseite ---------- */
+function renderTask(idx){
+  const tasks = activeTasks();
+  if(idx === null || idx < 0 || idx >= tasks.length) idx = 0;
+  const task = tasks[idx];
+  const reviewing = state.finished;
+  $("#taskCounter").textContent = "Aufgabe " + (idx + 1) + " von " + tasks.length;
+  const marked = !!state.marks[task.id];
+  $("#taskAreaLabel").textContent = task.areaName + (marked && !reviewing ? " · zum erneuten Ansehen markiert" : "");
+  const track = $("#progressTrack");
+  track.innerHTML = "";
+  tasks.forEach((t, i) => {
+    track.appendChild(h("div", { class: "progress-seg" + (i < idx ? " done" : (i === idx ? " current" : "")) }));
+  });
+
+  const card = h("div", { class: "card" });
+  if(reviewing){
+    card.appendChild(h("div", { class: "review-banner", text: "Rückblick-Modus: Ihr Trainer ist bereits abgeschlossen und bewertet. Sie können hier weiterüben – das verändert Ihre Auswertung nicht mehr." }));
+  } else {
+    card.appendChild(h("div", { class: "task-tools no-print" },
+      h("button", { class: "mark-btn", "aria-pressed": marked ? "true" : "false",
+        text: marked ? "Markierung entfernen" : "Später noch einmal ansehen",
+        onclick: () => { if(state.marks[task.id]) delete state.marks[task.id]; else state.marks[task.id] = true; saveState(); rerender(); } })));
+  }
+  card.appendChild(h("div", { class: "task-header" },
+    h("h2", { text: "Aufgabe " + taskNumber(task) }),
+    h("span", { class: "badge-bereich", text: task.areaName })));
+  if(task.situation) card.appendChild(h("div", { class: "situation-box", text: task.situation }));
+  task.parts.forEach(p => card.appendChild(renderPart(p)));
+
+  const container = $("#taskContainer");
+  container.innerHTML = "";
+  container.appendChild(card);
+
+  $("#btnBack").disabled = idx === 0;
+  if(reviewing){
+    $("#btnNext").textContent = "Nächste Aufgabe →";
+    $("#btnNext").disabled = idx === tasks.length - 1;
+  } else {
+    $("#btnNext").disabled = false;
+    $("#btnNext").textContent = idx === tasks.length - 1 ? "Zur Auswertung →" : "Weiter →";
+  }
+  $("#finishEarlyRow").style.display = reviewing ? "none" : "";
+  $("#backToResultsRow").style.display = reviewing ? "" : "none";
+
+  if(reviewing && reviewHighlightParts.length){
+    reviewHighlightParts.forEach(pid => {
+      const t = document.getElementById("part-" + pid);
+      if(t) t.classList.add("review-highlight");
+    });
+    if(reviewScrollPending){
+      reviewScrollPending = false;
+      const first = document.getElementById("part-" + reviewHighlightParts[0]);
+      if(first) setTimeout(() => first.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+    }
+  }
+}
+
+function renderPart(p){
+  const st = state.parts[p.id];
+  const wrap = h("div", { class: "part", id: "part-" + p.id });
+  wrap.appendChild(h("h3", null, "Teilaufgabe " + partLabel(p) + " ",
+    h("span", { class: "points-tag", text: "(" + fmtPoints(p.points) + ")" })));
+  let body = null;
+  switch(p.kind){
+    case "choice": body = renderChoice(p, st); break;
+    case "matchGroup": body = renderMatchGroup(p, st); break;
+    case "shortText": body = renderShortText(p, st); break;
+    case "numberGroup": body = renderNumberGroup(p, st); break;
+    case "booking": body = renderBookingPart(p, st); break;
+    case "bookingCheck": body = renderBookingCheck(p, st); break;
+    case "open": body = renderOpen(p, st); break;
+    case "selectOpen": body = renderSelectOpen(p, st); break;
+    default: body = h("p", { text: "Dieser Aufgabentyp wird nicht unterstützt." });
+  }
+  wrap.appendChild(body);
+  if(state.finished) wrap.appendChild(renderReviewBox(p, st));
+  return wrap;
+}
+function fmtPoints(n){ return String(n).replace(".", ",") + " " + (n === 1 ? "Punkt" : "Punkte"); }
+function fmtPts(n){ return String(round2(n)).replace(".", ","); }
+
+function pPrompt(text){ return h("p", { class: "prompt", text: text }); }
+
+/* Gemeinsame Prüfen-Schaltfläche (erster Versuch zählt; danach "zum Üben") */
+function makeCheckRow(p, st, gradeFn){
+  const btn = h("button", { class: "btn", text: st.diagLocked ? "Zum Üben erneut versuchen" : "Antwort prüfen",
+    onclick: () => {
+      gradeFn(p, st);
+      st.checked = true; st.attempts += 1;
+      lockDiagnosis(st);
+      saveState();
+      rerender();
+    } });
+  btn.disabled = !hasAnswer(p, st);
+  const row = h("div", { class: "btn-row" }, btn);
+  return { row: row, update: () => { btn.disabled = !hasAnswer(p, st); } };
+}
+function hasAnswer(p, st){
+  switch(p.kind){
+    case "choice": return st.choiceValue !== null && st.choiceValue !== undefined;
+    case "matchGroup": return p.items.some(i => !!st.matchValues[i.id]);
+    case "shortText": return String(st.shortTextValue || "").trim() !== "";
+    case "numberGroup": return p.fields.some(f => String(st.fieldValues[f.id] || "").trim() !== "");
+    case "booking": return !!(st.bk.soll || st.bk.haben || String(st.bk.betrag || "").trim());
+    case "bookingCheck": return st.bc.rows.some(r => r.konto || r.art || r.wirkung || r.seite) || !!(st.bk.soll || st.bk.haben || String(st.bk.betrag || "").trim());
+    default: return true;
+  }
+}
+function diagBanner(st, max){
+  return h("div", { class: "diag-banner",
+    text: "Für Ihre Diagnose zählt Ihr erster Versuch: " + fmtPts(st.diagEarned || 0) + " von " + fmtPts(max) + " Punkten. Sie können hier weiterüben – das verändert Ihre Auswertung nicht mehr." });
+}
+function fb(kind, label, text){
+  return h("div", { class: "feedback " + kind }, h("span", { class: "status-word", text: label + " " }), text);
+}
+const LBL = { correct: "Richtig.", partial: "Teilweise richtig.", wrong: "Noch nicht richtig." };
+
+/* Sicherheitseinschätzung (nach automatisch bewerteten Aufgaben) */
+function renderConfidence(p, st){
+  const box = h("div", { class: "confidence" }, h("div", { style: "font-weight:600;", text: "Wie sicher waren Sie?" }));
+  const opts = h("div", { class: "options" });
+  [["sicher", "sicher"], ["eher", "eher sicher"], ["geraten", "geraten / sehr unsicher"]].forEach(c => {
+    const input = h("input", { type: "radio", name: "conf_" + p.id, value: c[0], checked: st.confidence === c[0], disabled: st.diagConfidence !== null,
+      onchange: () => { st.confidence = c[0]; lockConfidence(st); saveState(); rerender(); } });
+    opts.appendChild(h("label", null, input, c[1]));
+  });
+  box.appendChild(opts);
+  if(st.diagConfidence){
+    const ok = st.diagCorrectness, c = st.diagConfidence;
+    let note = "";
+    if(ok === false && c === "sicher") note = "Mögliche Fehlvorstellung – überprüfen Sie dieses Thema gezielt.";
+    else if(ok === true && c === "geraten") note = "Richtig, aber noch nicht sicher abrufbar – festigen Sie dieses Thema.";
+    if(note && state.finished === false) box.appendChild(h("div", { class: "flag-note", text: note }));
+  }
+  return box;
+}
+
+/* ---------- Multiple Choice ---------- */
+function renderChoice(p, st){
+  const box = h("div");
+  box.appendChild(pPrompt(p.prompt));
+  const list = h("div", { class: "choice-list", role: "radiogroup" });
+  const chk = makeCheckRow(p, st, gradeChoice);
+  p.options.forEach((o, i) => {
+    const input = h("input", { type: "radio", name: "choice_" + p.id, value: String(i), checked: st.choiceValue === i,
+      onchange: () => { st.choiceValue = i; saveState(); chk.update(); } });
+    list.appendChild(h("label", null, input, h("span", { class: "letter", text: LETTERS[i] + ")" }), h("span", { text: o })));
+  });
+  box.appendChild(list);
+  box.appendChild(chk.row);
+  if(st.checked && st.res){
+    if(st.diagLocked) box.appendChild(diagBanner(st, p.points));
+    box.appendChild(st.res.ok ? fb("correct", LBL.correct, "Ihre Auswahl stimmt.") : fb("wrong", LBL.wrong, p.feedback || "Prüfen Sie Ihre Auswahl noch einmal."));
+    box.appendChild(renderConfidence(p, st));
+  }
+  return box;
+}
+
+/* ---------- Zuordnung per Dropdown ---------- */
+function renderMatchGroup(p, st){
+  const box = h("div");
+  box.appendChild(pPrompt(p.prompt));
+  const chk = makeCheckRow(p, st, gradeMatchGroup);
+  p.items.forEach((it, i) => {
+    const sel = h("select", { "aria-label": "Zuordnung " + (i + 1), onchange: () => { st.matchValues[it.id] = sel.value; saveState(); chk.update(); } },
+      h("option", { value: "", text: "Bitte wählen …" }),
+      p.options.map(o => h("option", { value: o, text: o, selected: st.matchValues[it.id] === o })));
+    box.appendChild(h("div", { class: "field-row" },
+      h("label", { text: (i + 1) + ") " + it.text }),
+      h("div", { class: "input-wrap" }, sel)));
+  });
+  box.appendChild(chk.row);
+  if(st.checked && st.res && st.res.items){
+    if(st.diagLocked) box.appendChild(diagBanner(st, p.points));
+    p.items.forEach((it, i) => {
+      const r = st.res.items[it.id];
+      if(!r) return;
+      box.appendChild(r.ok ? fb("correct", LBL.correct, (i + 1) + ") " + it.correct + ".")
+                           : fb("wrong", LBL.wrong, (i + 1) + ") " + (p.feedback || "Prüfen Sie Ihre Zuordnung noch einmal.")));
+    });
+    box.appendChild(renderConfidence(p, st));
+  }
+  return box;
+}
+
+/* ---------- Kurzantwort ---------- */
+function renderShortText(p, st){
+  const box = h("div");
+  box.appendChild(pPrompt(p.prompt));
+  const chk = makeCheckRow(p, st, gradeShortText);
+  const input = h("input", { type: "text", placeholder: "Ihre Antwort …", autocomplete: "off", value: st.shortTextValue || "",
+    "aria-label": "Ihre Antwort", oninput: () => { st.shortTextValue = input.value; saveState(); chk.update(); } });
+  box.appendChild(input);
+  box.appendChild(chk.row);
+  if(st.checked && st.res){
+    if(st.diagLocked) box.appendChild(diagBanner(st, p.points));
+    box.appendChild(st.res.ok ? fb("correct", LBL.correct, p.accepted[0] + ".") : fb("wrong", LBL.wrong, p.feedback || "Prüfen Sie Ihre Antwort noch einmal."));
+    box.appendChild(renderConfidence(p, st));
+  }
+  return box;
+}
+
+/* ---------- Tabellen (sichtbare Daten) ---------- */
+function renderDataTable(t){
+  if(!t) return null;
+  const table = h("table", { class: "data-table" });
+  if(t.caption) table.appendChild(h("caption", { text: t.caption }));
+  const heads = t.head || t.headers || [];
+  if(heads.length) table.appendChild(h("thead", null, h("tr", null, heads.map(x => h("th", { scope: "col", text: x })))));
+  const tb = h("tbody");
+  (t.rows || []).forEach(r => tb.appendChild(h("tr", null, r.map(c => {
+    const txt = String(c === null || c === undefined ? "" : c);
+    const cls = txt === "" ? "empty" : (/^[\d.]+,\d{2}$/.test(txt) ? "num" : "");
+    return h("td", { class: cls, text: txt });
+  }))));
+  table.appendChild(tb);
+  return h("div", { class: "table-scroll" }, table);
+}
+
+/* ---------- Rechenaufgabe ---------- */
+function renderNumberGroup(p, st){
+  const box = h("div");
+  if(p.prompt) box.appendChild(pPrompt(p.prompt));
+  const tbl = renderDataTable(p.table);
+  if(tbl) box.appendChild(tbl);
+  const chk = makeCheckRow(p, st, gradeNumberGroup);
+  const body = h("tbody");
+  p.fields.forEach(f => {
+    const inp = h("input", { type: "text", inputmode: "decimal", autocomplete: "off", placeholder: "0,00", value: st.fieldValues[f.id] || "",
+      "aria-label": f.label, oninput: () => { st.fieldValues[f.id] = inp.value; saveState(); chk.update(); } });
+    body.appendChild(h("tr", null, h("td", { text: f.label }),
+      h("td", null, h("div", { class: "input-wrap" }, inp, h("span", { class: "unit", text: f.unit || "" })))));
+  });
+  box.appendChild(h("div", { class: "table-scroll" }, h("table", { class: "calc-table" }, body)));
+  box.appendChild(chk.row);
+  if(st.checked && st.res && st.res.fields){
+    if(st.diagLocked) box.appendChild(diagBanner(st, p.points));
+    p.fields.forEach(f => {
+      const r = st.res.fields[f.id];
+      if(!r) return;
+      if(r.status === "correct") box.appendChild(fb("correct", LBL.correct, f.label + ": " + fmtByUnit(f.expected, f.unit) + "."));
+      else if(r.status === "partial") box.appendChild(fb("partial", LBL.partial, f.label + ": Ihr Wert passt zu Ihrem eigenen Zwischenwert (Folgefehler). Prüfen Sie den vorherigen Schritt."));
+      else if(r.status === "empty") box.appendChild(fb("wrong", LBL.wrong, f.label + ": Es wurde kein Wert eingegeben."));
+      else if(r.status === "invalid") box.appendChild(fb("wrong", LBL.wrong, f.label + ": Die Eingabe ist keine gültige Zahl. " + (f.hint || "")));
+      else box.appendChild(fb("wrong", LBL.wrong, f.label + ": " + (f.hint || "Prüfen Sie Ihre Rechnung noch einmal.")));
+    });
+    box.appendChild(renderConfidence(p, st));
+  }
+  return box;
+}
+
+/* ---------- Buchungssatz-Zeile ---------- */
+function accountSelect(value, onchange, label){
+  return h("select", { "aria-label": label, onchange: ev => onchange(ev.target.value) },
+    h("option", { value: "", text: "Bitte wählen …" }),
+    ACCOUNTS.map(a => h("option", { value: a, text: a, selected: value === a })));
+}
+function renderBookingRow(st, chk){
+  const betrag = h("input", { type: "text", inputmode: "decimal", autocomplete: "off", placeholder: "0,00", value: st.bk.betrag || "", "aria-label": "Betrag",
+    oninput: () => { st.bk.betrag = betrag.value; saveState(); chk.update(); } });
+  return h("div", { class: "booking-row" },
+    h("div", null, h("label", { text: "Sollkonto" }), accountSelect(st.bk.soll, v => { st.bk.soll = v; saveState(); chk.update(); }, "Sollkonto")),
+    h("div", { class: "an", text: "an" }),
+    h("div", null, h("label", { text: "Habenkonto" }), accountSelect(st.bk.haben, v => { st.bk.haben = v; saveState(); chk.update(); }, "Habenkonto")),
+    h("div", null, h("label", { text: "Betrag" }), h("div", { class: "amount" }, betrag, h("span", { class: "unit", text: "€" }))));
+}
+function bookingFeedback(p, b, r){
+  const out = [];
+  if(r.swap){
+    out.push(fb("wrong", LBL.wrong, (p.sourceHints && p.sourceHints.swap) || "Soll und Haben sind vertauscht. Prüfen Sie, ob die Konten gemehrt oder gemindert werden."));
+  } else {
+    out.push(r.sollOk ? fb("correct", LBL.correct, "Sollkonto: " + b.soll + ".")
+                      : fb("wrong", LBL.wrong, "Sollkonto: Prüfen Sie zuerst, welches Konto sich verändert und ob es ein Aktiv-, Passiv- oder Erfolgskonto ist."));
+    out.push(r.habenOk ? fb("correct", LBL.correct, "Habenkonto: " + b.haben + ".")
+                       : fb("wrong", LBL.wrong, "Habenkonto: Prüfen Sie Kontoart und Mehrung bzw. Minderung des Gegenkontos."));
+  }
+  if(r.betragOk) out.push(fb("correct", LBL.correct, "Betrag: " + fmtEuro(b.betrag) + " (ohne eigene Punkte)."));
+  else if(r.betragEmpty) out.push(fb("partial", "Hinweis.", "Es wurde kein Betrag eingegeben. Der Betrag bringt keine eigenen Punkte."));
+  else out.push(fb("partial", "Hinweis.", "Betrag: Prüfen Sie den Betrag aus dem Sachverhalt. Er bringt keine eigenen Punkte."));
+  return out;
+}
+function renderBookingPart(p, st){
+  const box = h("div");
+  box.appendChild(pPrompt(p.prompt));
+  const chk = makeCheckRow(p, st, gradeBookingPart);
+  box.appendChild(renderBookingRow(st, chk));
+  box.appendChild(chk.row);
+  if(st.checked && st.res && st.res.booking){
+    if(st.diagLocked) box.appendChild(diagBanner(st, p.points));
+    bookingFeedback(p, p.booking, st.res.booking).forEach(n => box.appendChild(n));
+    box.appendChild(renderConfidence(p, st));
+  }
+  return box;
+}
+
+/* ---------- Buchungscheck in fünf Schritten ---------- */
+const WIRKUNG_OPTIONS = ["Mehrung", "Minderung"];
+const SEITE_OPTIONS = ["Soll", "Haben"];
+function renderBookingCheck(p, st){
+  const box = h("div");
+  box.appendChild(pPrompt(p.prompt));
+  const chk = makeCheckRow(p, st, gradeBookingCheck);
+  box.appendChild(h("div", { class: "step-head", text: "Schritt 1 bis 4: Konten untersuchen" }));
+  const colDefs = [
+    ["konto", "1. Konto", ACCOUNTS], ["art", "2. Kontoart", p.artOptions],
+    ["wirkung", "3. Mehrung oder Minderung", WIRKUNG_OPTIONS], ["seite", "4. Buchung im Soll oder Haben", SEITE_OPTIONS] ];
+  const tbody = h("tbody");
+  st.bc.rows.forEach((row, ri) => {
+    const tr = h("tr", null, h("th", { scope: "row", text: "Konto " + (ri + 1) }));
+    colDefs.forEach(cd => {
+      const sel = h("select", { "aria-label": cd[1] + ", Zeile " + (ri + 1), onchange: () => { row[cd[0]] = sel.value; saveState(); chk.update(); } },
+        h("option", { value: "", text: "Bitte wählen …" }),
+        cd[2].map(o => h("option", { value: o, text: o, selected: row[cd[0]] === o })));
+      tr.appendChild(h("td", null, sel));
+    });
+    tbody.appendChild(tr);
+  });
+  box.appendChild(h("div", { class: "table-scroll" },
+    h("table", { class: "check-table" },
+      h("thead", null, h("tr", null, h("th", { text: "" }), colDefs.map(cd => h("th", { scope: "col", text: cd[1] })))),
+      tbody)));
+  box.appendChild(h("div", { class: "step-head", text: "Schritt 5: Buchungssatz" }));
+  box.appendChild(renderBookingRow(st, chk));
+  box.appendChild(chk.row);
+  if(st.checked && st.res && st.res.cols){
+    if(st.diagLocked) box.appendChild(diagBanner(st, p.points));
+    const names = { konto: "Konten", art: "Kontoart", wirkung: "Mehrung oder Minderung", seite: "Soll oder Haben" };
+    let anyWrong = false;
+    ["konto", "art", "wirkung", "seite"].forEach(c => {
+      const r = st.res.cols[c];
+      if(r.ok) box.appendChild(fb("correct", LBL.correct, "Spalte „" + names[c] + "“ stimmt."));
+      else { anyWrong = true; box.appendChild(fb("wrong", LBL.wrong, "Spalte „" + names[c] + "“: Prüfen Sie diese Spalte für beide Konten noch einmal.")); }
+    });
+    if(anyWrong && p.feedbackBySource) box.appendChild(fb("partial", "Hinweis.", p.feedbackBySource));
+    bookingFeedback(p, p.booking, st.res.booking).forEach(n => box.appendChild(n));
+    box.appendChild(renderConfidence(p, st));
+  }
+  return box;
+}
+
+/* ---------- Offene Aufgabe mit Selbstbewertung ---------- */
+function renderCriteriaBox(criteria){
+  const box = h("div", { class: "criteria-box" });
+  (criteria.groups || []).forEach(g => {
+    box.appendChild(h("div", { style: "font-weight:700;", text: g.label }));
+    box.appendChild(h("ul", null, g.items.map(i => h("li", { text: i }))));
+  });
+  box.appendChild(h("div", { class: "criteria-note", text: "Andere fachlich sinnvolle Antworten können ebenfalls richtig sein." }));
+  if(criteria.note) box.appendChild(h("div", { class: "criteria-note", text: criteria.note }));
+  return box;
+}
+function renderSelfAssessment(p, st, openPoints, heading, onPick){
+  const box = h("div", { class: "self-assess" });
+  if(st.diagLocked) box.appendChild(diagBanner(st, p.kind === "selectOpen" ? (p.selectPoints + p.openPoints) : p.points));
+  box.appendChild(h("div", { style: "font-weight:600;", text: heading }));
+  const opts = h("div", { class: "options" });
+  [["full", "vollständig berücksichtigt"], ["partial", "teilweise berücksichtigt"], ["none", "noch nicht ausreichend"]].forEach(c => {
+    const input = h("input", { type: "radio", name: "self_" + p.id, value: c[0], checked: st.selfAssessment === c[0], disabled: st.diagLocked,
+      onchange: () => { onPick(c[0]); } });
+    opts.appendChild(h("label", null, input, c[1]));
+  });
+  box.appendChild(opts);
+  return box;
+}
+function selfFactor(k){ return k === "full" ? 1 : (k === "partial" ? 0.5 : 0); }
+
+function renderOpen(p, st){
+  const box = h("div");
+  box.appendChild(pPrompt(p.prompt));
+  const ta = h("textarea", { placeholder: "Ihre Antwort …", "aria-label": "Ihre Antwort", disabled: st.revealed,
+    oninput: () => { st.textValue = ta.value; revealBtn.disabled = ta.value.trim() === ""; saveState(); } });
+  ta.value = st.textValue || "";
+  box.appendChild(ta);
+  const revealBtn = h("button", { class: "btn secondary", text: "Mit Lösungshinweisen vergleichen",
+    disabled: st.revealed || String(st.textValue || "").trim() === "",
+    onclick: () => { if(!st.diagAnswer) st.diagAnswer = snapshotAnswer(st); st.revealed = true; saveState(); rerender(); } });
+  box.appendChild(h("div", { class: "btn-row" }, revealBtn));
+  if(st.revealed){
+    box.appendChild(renderCriteriaBox(p.criteria));
+    box.appendChild(renderSelfAssessment(p, st, p.points, "Wie schätzen Sie Ihre eigene Antwort ein?", key => {
+      st.selfAssessment = key;
+      st.earnedPoints = round2(p.points * selfFactor(key));
+      st.correctness = ratioCorrectness(st.earnedPoints, p.points);
+      st.res = { self: key };
+      lockDiagnosis(st); saveState(); rerender();
+    }));
+  }
+  return box;
+}
+
+/* ---------- Auswahl + offene Begründung ---------- */
+function renderSelectOpen(p, st){
+  const box = h("div");
+  if(p.situation) box.appendChild(h("div", { class: "situation-box", text: p.situation }));
+  const tbl = renderDataTable(p.table);
+  if(tbl) box.appendChild(tbl);
+  box.appendChild(pPrompt(p.selectPrompt));
+  const sel = h("select", { "aria-label": p.selectPrompt, disabled: st.revealed,
+    onchange: () => { st.selectValue = sel.value; saveState(); refresh(); } },
+    h("option", { value: "", text: "Bitte wählen …" }),
+    p.selectOptions.map(o => h("option", { value: o, text: o, selected: st.selectValue === o })));
+  box.appendChild(sel);
+  box.appendChild(h("p", { class: "prompt", style: "margin-top:14px;", text: p.openPrompt }));
+  const ta = h("textarea", { placeholder: "Ihre Begründung …", "aria-label": "Ihre Begründung", disabled: st.revealed,
+    oninput: () => { st.textValue = ta.value; saveState(); refresh(); } });
+  ta.value = st.textValue || "";
+  box.appendChild(ta);
+  const revealBtn = h("button", { class: "btn secondary", text: "Mit Lösungshinweisen vergleichen",
+    onclick: () => {
+      if(!st.diagAnswer) st.diagAnswer = snapshotAnswer(st);
+      const ok = st.selectValue === p.correctSelect;
+      st.correctness = ok;
+      if(!st.diagSelectLocked){ st.diagSelectFraction = ok ? 1 : 0; st.diagSelectLocked = true; }
+      st.revealed = true; saveState(); rerender();
+    } });
+  function refresh(){ revealBtn.disabled = st.revealed || !(String(st.textValue || "").trim() && st.selectValue); }
+  refresh();
+  box.appendChild(h("div", { class: "btn-row" }, revealBtn));
+  if(st.revealed){
+    const ok = st.selectValue === p.correctSelect;
+    box.appendChild(ok ? fb("correct", LBL.correct, "Ihre Auswahl: " + p.correctSelect + ".")
+                       : fb("wrong", LBL.wrong, "Prüfen Sie Ihre Auswahl noch einmal anhand der Situation."));
+    if(!st.diagLocked) box.appendChild(renderConfidence(p, st));
+    else box.appendChild(renderConfidence(p, st));
+    box.appendChild(renderCriteriaBox(p.criteria));
+    box.appendChild(renderSelfAssessment(p, st, p.openPoints, "Wie schätzen Sie Ihre eigene Begründung ein?", key => {
+      st.selfAssessment = key;
+      const selPts = round2((p.selectPoints || 0) * (st.diagSelectLocked ? st.diagSelectFraction : 0));
+      st.earnedPoints = round2(selPts + p.openPoints * selfFactor(key));
+      st.correctness = st.diagSelectFraction === 1;
+      st.res = { select: st.diagSelectFraction === 1, self: key };
+      lockDiagnosis(st); saveState(); rerender();
+    }));
+  }
+  return box;
+}
+
+/* ---------- Lösungs- und Antwortzeilen (Rückblick) ---------- */
+function bookingLine(b){ return b.soll + " an " + b.haben + " " + fmtEuro(b.betrag); }
+function solutionLines(p){
+  switch(p.kind){
+    case "choice": return ["Richtig ist " + LETTERS[p.correct] + ") " + p.options[p.correct]];
+    case "matchGroup": return p.items.map((it, i) => (i + 1) + ") " + it.text + " → " + it.correct);
+    case "shortText": return ["Richtig ist: " + p.accepted[0] + (p.accepted.length > 1 ? " (weitere akzeptierte Begriffe: " + p.accepted.slice(1, 4).join("; ") + ")" : "")];
+    case "numberGroup": return p.fields.map((f, i) => (i + 1) + ") " + f.label + ": " + fmtByUnit(f.expected, f.unit) + (f.hint ? " – " + f.hint : ""));
+    case "booking": return ["Buchungssatz: " + bookingLine(p.booking)];
+    case "bookingCheck": {
+      const l = p.rows.map((r, i) => (i + 1) + ") Konto " + r.konto + ": " + r.art + ", " + r.wirkung + ", Buchung im " + r.seite);
+      l.push((p.rows.length + 1) + ") Buchungssatz: " + bookingLine(p.booking));
+      return l;
+    }
+    case "open": return ((p.criteria.groups || []).reduce((a, g) => a.concat(g.items), [])).map((t, i) => (i + 1) + ") " + t);
+    case "selectOpen": {
+      const l = ["1) Auswahl: " + p.correctSelect];
+      ((p.criteria.groups || []).reduce((a, g) => a.concat(g.items), [])).forEach((t, i) => l.push((i + 2) + ") " + t));
+      return l;
+    }
+  }
+  return [];
+}
+function answerLines(p, a){
+  if(!a) return ["Keine Antwort gegeben."];
+  const none = "keine Angabe";
+  switch(p.kind){
+    case "choice": return [(a.choiceValue === null || a.choiceValue === undefined) ? "Keine Antwort gegeben." : LETTERS[a.choiceValue] + ") " + p.options[a.choiceValue]];
+    case "matchGroup": return p.items.map((it, i) => (i + 1) + ") " + it.text + " → " + (a.matchValues[it.id] || none));
+    case "shortText": return [a.shortTextValue ? a.shortTextValue : "Keine Antwort gegeben."];
+    case "numberGroup": return p.fields.map((f, i) => (i + 1) + ") " + f.label + ": " + (String(a.fieldValues[f.id] || "").trim() || none));
+    case "booking": return ["Buchungssatz: " + (a.bk.soll || none) + " an " + (a.bk.haben || none) + ", Betrag " + (String(a.bk.betrag || "").trim() || none)];
+    case "bookingCheck": {
+      const l = a.bc.rows.map((r, i) => (i + 1) + ") " + (r.konto || none) + " | " + (r.art || none) + " | " + (r.wirkung || none) + " | " + (r.seite || none));
+      l.push((a.bc.rows.length + 1) + ") Buchungssatz: " + (a.bk.soll || none) + " an " + (a.bk.haben || none) + ", Betrag " + (String(a.bk.betrag || "").trim() || none));
+      return l;
+    }
+    case "open": return [a.textValue ? a.textValue : "Keine Antwort gegeben."];
+    case "selectOpen": return ["1) Auswahl: " + (a.selectValue || none), "2) Begründung: " + (a.textValue ? a.textValue : none)];
+  }
+  return [];
+}
+const CONF_TEXT = { sicher: "sicher", eher: "eher sicher", geraten: "geraten / sehr unsicher" };
+function renderReviewBox(p, st){
+  const max = p.kind === "selectOpen" ? (p.selectPoints + p.openPoints) : p.points;
+  const box = h("div", { class: "review-box" });
+  box.appendChild(h("h4", { text: "Rückblick zu dieser Teilaufgabe" }));
+  box.appendChild(h("p", { class: "meta", text: st.diagLocked
+    ? "Erstbewertung: " + fmtPts(st.diagEarned || 0) + " von " + fmtPts(max) + " Punkten · Sicherheit: " + (st.diagConfidence ? CONF_TEXT[st.diagConfidence] : "nicht angegeben")
+    : "Diese Teilaufgabe wurde nicht bewertet (0 von " + fmtPts(max) + " Punkten)." }));
+  box.appendChild(h("h4", { text: "Ihre Erstantwort" }));
+  box.appendChild(h("ul", null, answerLines(p, st.diagAnswer).map(t => h("li", { text: t }))));
+  box.appendChild(h("h4", { text: "Musterlösung" }));
+  box.appendChild(h("ul", null, solutionLines(p).map(t => h("li", { text: t }))));
+  if(p.feedback && st.diagLocked && (st.diagEarned || 0) < max) box.appendChild(h("p", { class: "meta", text: "Hinweis: " + p.feedback }));
+  return box;
+}
+
+/* =====================================================================
+   5) AUSWERTUNG
+   ===================================================================== */
+const AREA_MESSAGES = {
+  grundlagen: {
+    green: "Aufgaben des Rechnungswesens, GoB und Aufbewahrungsfristen sitzen sicher.",
+    yellow: "Festigen Sie insbesondere die Zuordnung der GoB und die Aufbewahrungsfristen.",
+    red: "Sie sollten Aufgaben des Rechnungswesens, GoB und Aufbewahrungsfristen gezielt üben." },
+  inventur: {
+    green: "Inventur, Inventar und Bilanz sowie die Berechnung des Reinvermögens sitzen sicher.",
+    yellow: "Festigen Sie insbesondere die Abgrenzung von Inventur, Inventar und Bilanz und die Berechnung des Reinvermögens.",
+    red: "Sie sollten Inventur, Inventar und Bilanz sowie die Berechnung des Reinvermögens gezielt üben." },
+  bankbilanz: {
+    green: "Aufbau der Bankbilanz und die Banksicht auf Spareinlagen sitzen sicher.",
+    yellow: "Festigen Sie insbesondere, welche Posten aus Sicht der Bank auf der Aktiv- bzw. Passivseite stehen.",
+    red: "Sie sollten die Bankbilanz und die Banksicht auf Debitoren, Kreditoren und Spareinlagen gezielt üben." },
+  bestandskonten: {
+    green: "Bestandskonten führen und Bilanzveränderungen bestimmen sitzen sicher.",
+    yellow: "Festigen Sie insbesondere die Berechnung der Schlussbestände und die vier Arten der Bilanzveränderung.",
+    red: "Sie sollten das Führen von Aktiv- und Passivkonten sowie die Bilanzveränderungen gezielt üben." },
+  buchungen: {
+    green: "Der Buchungscheck und die Buchungssätze auf Bestandskonten sitzen sicher.",
+    yellow: "Festigen Sie insbesondere die Reihenfolge des Buchungschecks: Konto, Kontoart, Mehrung oder Minderung, Soll oder Haben.",
+    red: "Sie sollten den Buchungscheck in fünf Schritten und das Buchen auf Bestandskonten gezielt üben." },
+  erfolgskonten: {
+    green: "Aufwand und Ertrag aus Banksicht sowie das Buchen auf Erfolgskonten sitzen sicher.",
+    yellow: "Festigen Sie insbesondere die Unterscheidung von Aufwand und Ertrag aus Sicht der Bank.",
+    red: "Sie sollten Aufwand und Ertrag aus Banksicht sowie das Buchen auf Erfolgskonten gezielt üben." },
+  guv: {
+    green: "GuV-Grundlagen, Ergebnisberechnung und Wirkung auf das Eigenkapital sitzen sicher.",
+    yellow: "Festigen Sie insbesondere die Berechnung des Jahresergebnisses und die Seiten des GuV-Kontos.",
+    red: "Sie sollten die Grundlagen des GuV-Kontos und die Ergebnisberechnung gezielt üben." }
+};
+const BANK_MESSAGES = {
+  green: "Die Sicht der Bank gelingt sicher.",
+  yellow: "Prüfen Sie bei jedem Fall konsequent die Sicht der Bensheimer Bank AG.",
+  red: "Üben Sie gezielt den Perspektivwechsel: Was ist für die Bank Forderung, Verbindlichkeit, Aufwand und Ertrag?"
+};
+function areaMessage(key, band){ return (AREA_MESSAGES[key] && AREA_MESSAGES[key][band]) || ""; }
+
+function resultCard(name, earned, max, band, note, extra, clickFn){
+  const pct = pctOf(earned, max);
+  const card = h("div", { class: "area-card " + band + (clickFn ? " clickable" : "") });
+  card.appendChild(h("div", { class: "row1" },
+    h("div", null, h("div", { class: "name", text: name }), h("span", { class: "area-tag " + band, text: BAND_TEXT[band] })),
+    h("div", { class: "area-pct", text: fmtPts(earned) + " von " + fmtPts(max) + " Punkten – " + pct + " %" })));
+  if(note) card.appendChild(h("div", { class: "area-note", text: note }));
+  (extra || []).forEach(t => card.appendChild(h("div", { class: "flag-note", text: t })));
+  if(clickFn){
+    card.setAttribute("role", "button"); card.setAttribute("tabindex", "0");
+    card.appendChild(h("div", { class: "review-link-hint", text: "Eigene Antworten & Musterlösung ansehen →" }));
+    card.addEventListener("click", clickFn);
+    card.addEventListener("keydown", ev => { if(ev.key === "Enter" || ev.key === " "){ ev.preventDefault(); clickFn(); } });
+  }
+  return card;
+}
+
+function renderResults(){
+  const sc = computeScores();
+  const pct = pctOf(sc.totalEarned, sc.totalMax);
+  $("#resultsTitle").textContent = "Ihr persönlicher Check – LF7 Buchführung (" + modeCfg().label + ")";
+  $("#totalPct").textContent = pct + " %";
+  $("#totalText").textContent = fmtPts(sc.totalEarned) + " von " + fmtPts(sc.totalMax) + " Diagnosepunkten";
+  $("#scoreRing").style.setProperty("--pct", pct);
+  const used = state.usedSeconds !== null && state.usedSeconds !== undefined ? state.usedSeconds : 0;
+  $("#timeText").textContent = "Bearbeitungszeit: " + fmtClock(used) + " von " + fmtClock(modeCfg().minutes * 60) + " Minuten";
+  $("#footerNote").textContent = CONFIG.title + " · Version " + CONFIG.version + " – Diagnose-Werkzeug ohne Notenvergabe · Die Punkte sind Diagnosepunkte, keine Schulnote · alle Daten verbleiben ausschließlich auf diesem Gerät";
+
+  // Leistungsstarke Lernende (Standard Abschnitt 14)
+  const strong = $("#strongMsg");
+  strong.innerHTML = "";
+  if(pct >= 85 && sc.misconceptions.length === 0){
+    strong.appendChild(h("div", { class: "strong-msg", text: "Ihr Fundament ist sehr stabil. Konzentrieren Sie sich bei der weiteren Vorbereitung verstärkt auf komplexe Transfer-, Analyse- und Entscheidungsaufgaben." }));
+  }
+
+  // Fehlvorstellungen (priorisiert, getrennt von der Punktzahl)
+  const miscCard = $("#miscCard"), miscList = $("#miscList");
+  miscList.innerHTML = "";
+  if(sc.misconceptions.length){
+    miscCard.style.display = "";
+    miscList.appendChild(h("p", { style: "font-weight:700;", text: "Anzahl: " + sc.misconceptions.length }));
+    sc.misconceptions.forEach(m => {
+      const item = h("div", { class: "misc-item", role: "button", tabindex: "0" },
+        h("div", { style: "font-weight:700;", text: "Teilaufgabe " + m.label + " – " + m.topic }),
+        h("div", { text: "Mögliche Fehlvorstellung – überprüfen Sie dieses Thema gezielt." }),
+        h("div", { class: "review-link-hint", text: "Eigene Antwort & Musterlösung ansehen →" }));
+      const go = () => reviewParts([m.partId]);
+      item.addEventListener("click", go);
+      item.addEventListener("keydown", ev => { if(ev.key === "Enter" || ev.key === " "){ ev.preventDefault(); go(); } });
+      miscList.appendChild(item);
+    });
+  } else { miscCard.style.display = "none"; }
+
+  // Kompetenzbereiche
+  const areaEl = $("#areaResults");
+  areaEl.innerHTML = "";
+  sc.areaOrder.forEach(key => {
+    const a = sc.areas[key];
+    const band = bandFor(pctOf(a.earned, a.max));
+    const extra = [];
+    if(a.misc) extra.push("Achtung: In diesem Bereich könnten sich Fehlvorstellungen eingeschlichen haben.");
+    if(a.unstable) extra.push("Die Ergebnisse sind richtig, aber Ihr Wissen scheint noch nicht stabil abrufbar zu sein.");
+    areaEl.appendChild(resultCard(a.name, a.earned, a.max, band, areaMessage(key, band), extra,
+      a.earned < a.max ? () => reviewArea(key) : null));
+  });
+
+  // Querschnitt Banksicht
+  const bankCard = $("#bankCard"), bankEl = $("#bankResult");
+  bankEl.innerHTML = "";
+  if(sc.bank.max > 0){
+    bankCard.style.display = "";
+    const band = bandFor(pctOf(sc.bank.earned, sc.bank.max));
+    bankEl.appendChild(resultCard("Sicht der Bank", sc.bank.earned, sc.bank.max, band, BANK_MESSAGES[band], [],
+      sc.bank.weakPartIds.length ? () => reviewParts(sc.bank.weakPartIds) : null));
+  } else { bankCard.style.display = "none"; }
+
+  // Unterthemen
+  const topicEl = $("#topicResults");
+  topicEl.innerHTML = "";
+  topicOrderList(sc).forEach(name => {
+    const t = sc.topics[name];
+    const band = bandFor(pctOf(t.earned, t.max));
+    const extra = [];
+    if(t.misc) extra.push("Mögliche Fehlvorstellung – überprüfen Sie dieses Thema gezielt.");
+    if(t.unstable) extra.push("Das Ergebnis ist richtig, aber Ihr Wissen scheint noch nicht sicher abrufbar zu sein.");
+    const pc = pctOf(t.earned, t.max);
+    const card = h("div", { class: "area-card " + band + (t.earned < t.max ? " clickable" : ""), style: "padding:10px 14px;margin:6px 0;" });
+    card.appendChild(h("div", { class: "row1" },
+      h("div", { class: "name", style: "font-size:14.5px;", text: name }),
+      h("div", { class: "area-pct", style: "font-size:14px;", text: fmtPts(t.earned) + "/" + fmtPts(t.max) + " · " + pc + " % · " + BAND_TEXT[band] })));
+    extra.forEach(x => card.appendChild(h("div", { class: "flag-note", text: x })));
+    if(t.earned < t.max){
+      card.setAttribute("role", "button"); card.setAttribute("tabindex", "0");
+      card.appendChild(h("div", { class: "review-link-hint", style: "margin-top:6px;", text: "Eigene Antwort & Musterlösung ansehen →" }));
+      const go = () => reviewTopic(name);
+      card.addEventListener("click", go);
+      card.addEventListener("keydown", ev => { if(ev.key === "Enter" || ev.key === " "){ ev.preventDefault(); go(); } });
+    }
+    topicEl.appendChild(card);
+  });
+
+  // Lernplan
+  const plan = weakestTopics(sc);
+  const planEl = $("#lernplanList");
+  planEl.innerHTML = "";
+  if(!plan.length){
+    planEl.appendChild(h("div", { class: "lernplan-item", text: "Alle Unterthemen wurden beim ersten Versuch vollständig richtig bearbeitet. Üben Sie weiter mit dem Übungstrainer." }));
+  }
+  plan.forEach((t, i) => {
+    const band = bandFor(t.pct);
+    planEl.appendChild(h("div", { class: "lernplan-item" },
+      h("span", { class: "rank", text: (i + 1) + "." }), h("strong", { text: t.name }),
+      h("div", { style: "margin-top:2px;font-size:14px;", text: BAND_TEXT[band] + " · " + t.pct + " %" }),
+      h("div", { style: "margin-top:4px;", text: LEARN_HINTS[t.name] || "" })));
+  });
+}
+
+/* ---------- Backlink-Review ---------- */
+function gotoReview(taskIdx, partIds){
+  reviewHighlightParts = partIds;
+  reviewTaskIndex = taskIdx;
+  reviewScrollPending = true;
+  render();
+  if(partIds.length === 0) window.scrollTo({ top: 0, behavior: "smooth" });
+}
+function reviewArea(key){
+  const tasks = activeTasks();
+  const idx = tasks.findIndex(t => t.area === key);
+  if(idx < 0) return;
+  let ids = tasks[idx].parts.filter(p => maxOfPart(p) > (state.parts[p.id].diagEarned || 0)).map(p => p.id);
+  if(!ids.length) ids = tasks[idx].parts.map(p => p.id);
+  gotoReview(idx, ids);
+}
+function maxOfPart(p){ return p.kind === "selectOpen" ? (p.selectPoints + p.openPoints) : p.points; }
+function reviewParts(partIds){
+  const tasks = activeTasks();
+  const idx = tasks.findIndex(t => t.parts.some(p => p.id === partIds[0]));
+  if(idx < 0) return;
+  gotoReview(idx, partIds.filter(id => tasks[idx].parts.some(p => p.id === id)));
+}
+function reviewTopic(name){
+  const tasks = activeTasks();
+  let idx = -1, ids = [];
+  tasks.forEach((t, ti) => t.parts.forEach(p => {
+    const hit = p.topic === name
+      || (p.kind === "matchGroup" && p.items.some(i => i.topic === name))
+      || (p.kind === "numberGroup" && p.fields.some(f => f.topic === name));
+    if(hit){ ids.push({ id: p.id, ti: ti }); if(idx < 0) idx = ti; }
+  }));
+  if(idx < 0) return;
+  gotoReview(idx, ids.filter(x => x.ti === idx).map(x => x.id));
+}
+
+/* =====================================================================
+   6) NAVIGATION, ABSCHLUSS, EXPORT
+   ===================================================================== */
+function countUnanswered(){
+  let n = 0;
+  activeParts().forEach(p => { if(!state.parts[p.id].diagLocked) n += 1; });
+  return n;
+}
+function markedTaskIndexes(){
+  const out = [];
+  activeTasks().forEach((t, i) => { if(state.marks[t.id]) out.push(i); });
+  return out;
+}
+function requestFinish(){
+  const un = countUnanswered(), marked = markedTaskIndexes();
+  if(un === 0 && marked.length === 0){ finishTrainer(); return; }
+  const paragraphs = [];
+  if(un > 0) paragraphs.push("Es sind noch " + un + " Teilaufgaben unbeantwortet. Unbeantwortete Teilaufgaben werden mit 0 Punkten gewertet. Möchten Sie trotzdem zur Auswertung?");
+  const tasks = activeTasks();
+  const items = marked.map(i => h("span", null, "Aufgabe " + taskNumber(tasks[i]) + " (" + tasks[i].areaName + ") ",
+    h("button", { class: "btn small secondary", text: "Zur Aufgabe", onclick: () => { closeDialog(); state.currentTask = i; saveState(); render(); window.scrollTo({ top: 0 }); } })));
+  if(marked.length) paragraphs.push("Sie haben folgende Aufgaben zum erneuten Ansehen markiert:");
+  openDialog({
+    title: "Vor der Auswertung", paragraphs: paragraphs, items: items,
+    buttons: [ { label: "Zurück zur Bearbeitung", kind: "secondary" }, { label: "Trotzdem zur Auswertung", onclick: finishTrainer } ]
+  });
+}
+// Teilaufgaben mit ausgewählter, aber noch nicht selbst bewerteter Auswahl: Auswahlpunkte werden gewertet
+function finalizeUnrated(){
+  activeParts().forEach(p => {
+    const st = state.parts[p.id];
+    if(st.diagLocked) return;
+    if(p.kind === "selectOpen" && st.diagSelectLocked){
+      st.earnedPoints = round2((p.selectPoints || 0) * (st.diagSelectFraction || 0));
+      st.correctness = st.diagSelectFraction === 1;
+      st.res = { select: st.diagSelectFraction === 1, self: null };
+      lockDiagnosis(st);
+    }
+  });
+}
+function finishTrainer(){
+  finalizeUnrated();
+  state.finished = true;
+  state.finishedAt = Date.now();
+  state.usedSeconds = Math.min(modeCfg().minutes * 60 * 10, Math.max(0, Math.round((state.finishedAt - state.startedAt) / 1000)));
+  reviewTaskIndex = null; reviewHighlightParts = [];
+  stopTimerLoop();
+  saveState();
+  render();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+function doRestart(){
+  stopTimerLoop();
+  try{ localStorage.removeItem(STORAGE_KEY); }catch(e){}
+  state = createFreshState();
+  storageBlocked = false;
+  reviewTaskIndex = null; reviewHighlightParts = [];
+  $("#chkSelfDirected").checked = false;
+  render();
+  window.scrollTo({ top: 0 });
+}
+function restartTrainer(){
+  openDialog({
+    title: "Trainer neu starten", paragraphs: ["Möchten Sie wirklich alle Eingaben und Ergebnisse dieses Trainers löschen?"],
+    buttons: [ { label: "Abbrechen", kind: "secondary" }, { label: "Alles löschen und neu starten", kind: "danger", onclick: doRestart } ]
+  });
+}
+
+/* ---------- Export ---------- */
+function exportBase(){
+  const sc = computeScores();
+  return { sc: sc, pct: pctOf(sc.totalEarned, sc.totalMax), now: new Date() };
+}
+function downloadFile(name, text, type){
+  const blob = new Blob([text], { type: type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = name;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+function fileName(ext){
+  const tag = (state.tag || "").replace(/[^a-zA-Z0-9_-]/g, "");
+  return "LF7_Trainer01_" + (tag || "Ergebnis") + "_" + new Date().toISOString().slice(0, 10) + "." + ext;
+}
+function saveTxt(){
+  const b = exportBase(), sc = b.sc;
+  const L = [];
+  L.push(CONFIG.title);
+  L.push("Ergebnisdatei (lokal, nicht übertragen)");
+  L.push("Trainer-ID: " + CONFIG.trainerId + " · Version " + CONFIG.version + " · Modus: " + modeCfg().label);
+  L.push("Datum: " + b.now.toLocaleString("de-DE"));
+  if(state.tag) L.push("Name/Kürzel: " + state.tag);
+  L.push("Hinweis: Es zählt jeweils der erste Bewertungsversuch je Teilaufgabe. Die Punkte sind Diagnosepunkte, keine Schulnote.");
+  L.push("");
+  L.push("Gesamt: " + fmtPts(sc.totalEarned) + " von " + fmtPts(sc.totalMax) + " Punkten (" + b.pct + " %)");
+  L.push("Bearbeitungszeit: " + fmtClock(state.usedSeconds || 0) + " von " + fmtClock(modeCfg().minutes * 60) + " Minuten");
+  L.push("");
+  L.push("Mögliche Fehlvorstellungen (falsch + sicher): " + sc.misconceptions.length);
+  sc.misconceptions.forEach(m => L.push("- Teilaufgabe " + m.label + " (" + m.topic + ")"));
+  L.push("");
+  L.push("Kompetenzbereiche:");
+  sc.areaOrder.forEach(k => { const a = sc.areas[k]; const p = pctOf(a.earned, a.max);
+    L.push("- " + a.name + ": " + fmtPts(a.earned) + "/" + fmtPts(a.max) + " Punkte (" + p + " %) – " + BAND_TEXT[bandFor(p)]); });
+  if(sc.bank.max > 0){ const p = pctOf(sc.bank.earned, sc.bank.max);
+    L.push("- Querschnitt Sicht der Bank: " + fmtPts(sc.bank.earned) + "/" + fmtPts(sc.bank.max) + " Punkte (" + p + " %) – " + BAND_TEXT[bandFor(p)]); }
+  L.push("");
+  L.push("Unterthemen (Detaildiagnose):");
+  topicOrderList(sc).forEach(n => { const t = sc.topics[n]; const p = pctOf(t.earned, t.max);
+    L.push("- " + n + ": " + fmtPts(t.earned) + "/" + fmtPts(t.max) + " Punkte (" + p + " %) – " + BAND_TEXT[bandFor(p)]); });
+  L.push("");
+  L.push("Sicherheitseinschätzungen je Teilaufgabe (erster Versuch):");
+  activeParts().forEach(p => { const st = state.parts[p.id];
+    if(st.diagConfidence) L.push("- " + partLabel(p) + ": Sicherheit = " + CONF_TEXT[st.diagConfidence] + ", Punkte = " + fmtPts(st.diagEarned || 0) + "/" + fmtPts(maxOfPart(p))); });
+  L.push("");
+  L.push("Lernschwerpunkte (3 schwächste Unterthemen):");
+  const plan = weakestTopics(sc);
+  if(!plan.length) L.push("- Alle Unterthemen wurden beim ersten Versuch vollständig richtig bearbeitet.");
+  plan.forEach((t, i) => L.push((i + 1) + ". " + t.name + " (" + t.pct + " %): " + (LEARN_HINTS[t.name] || "")));
+  downloadFile(fileName("txt"), L.join("\r\n"), "text/plain;charset=utf-8");
+}
+function saveJson(){
+  const b = exportBase(), sc = b.sc;
+  const obj = {
+    trainerId: CONFIG.trainerId, version: CONFIG.version, mode: state.mode, date: b.now.toISOString(),
+    tag: state.tag || "", totalEarned: sc.totalEarned, totalMax: sc.totalMax, percent: b.pct,
+    usedSeconds: state.usedSeconds || 0, allowedSeconds: modeCfg().minutes * 60,
+    areas: sc.areaOrder.map(k => ({ name: sc.areas[k].name, earned: sc.areas[k].earned, max: sc.areas[k].max, percent: pctOf(sc.areas[k].earned, sc.areas[k].max) })),
+    banksicht: { earned: sc.bank.earned, max: sc.bank.max },
+    topics: topicOrderList(sc).map(n => ({ name: n, earned: sc.topics[n].earned, max: sc.topics[n].max, percent: pctOf(sc.topics[n].earned, sc.topics[n].max) })),
+    misconceptions: sc.misconceptions,
+    parts: activeParts().map(p => { const st = state.parts[p.id];
+      return { id: p.id, label: partLabel(p), topic: p.topic, max: maxOfPart(p), earned: st.diagEarned || 0,
+               confidence: st.diagConfidence, correctness: st.diagCorrectness, firstAnswer: st.diagAnswer }; }),
+    learningPlan: weakestTopics(sc).map(t => ({ topic: t.name, percent: t.pct, hint: LEARN_HINTS[t.name] || "" }))
+  };
+  downloadFile(fileName("json"), JSON.stringify(obj, null, 2), "application/json;charset=utf-8");
+}
+
+/* ---------- Versionsdialog ---------- */
+function showVersionDialog(){
+  openDialog({
+    title: "Älterer Bearbeitungsstand gefunden",
+    paragraphs: [
+      "Es wurde ein Bearbeitungsstand aus einer älteren Version gefunden. Er kann nicht mit den aktuellen Aufgaben vermischt werden.",
+      "Wie möchten Sie fortfahren?"
+    ],
+    buttons: [
+      { label: "Alten Stand verwerfen", kind: "danger", onclick: () => {
+          try{ localStorage.removeItem(STORAGE_KEY); }catch(e){}
+          pendingOldRaw = null; storageBlocked = false; saveState(); render(); } },
+      { label: "Neue Version starten (alten Stand sichern)", onclick: () => {
+          try{ localStorage.setItem(STORAGE_KEY + "__sicherung_" + Date.now(), pendingOldRaw); }catch(e){}
+          try{ localStorage.removeItem(STORAGE_KEY); }catch(e){}
+          pendingOldRaw = null; storageBlocked = false; saveState(); render(); } }
+    ]
+  });
+}
+
+/* ---------- Start ---------- */
+document.addEventListener("DOMContentLoaded", () => {
+  render();
+  if(state.started && !state.finished) startTimerLoop();
+  if(storageBlocked) showVersionDialog();
+
+  $("#chkSelfDirected").addEventListener("change", e => { $("#btnStart").disabled = !e.target.checked || storageBlocked; });
+  $("#studentTagStart").addEventListener("input", e => { state.tag = e.target.value.slice(0, 40); saveState(); });
+  $("#btnStart").addEventListener("click", () => {
+    state.started = true;
+    state.startedAt = Date.now();
+    state.endAt = state.startedAt + modeCfg().minutes * 60 * 1000;
+    state.currentTask = 0;
+    saveState();
+    startTimerLoop();
+    render();
+    window.scrollTo({ top: 0 });
+  });
+  $("#btnBack").addEventListener("click", () => {
+    if(state.finished){ if(reviewTaskIndex > 0){ reviewTaskIndex -= 1; reviewHighlightParts = []; render(); } }
+    else if(state.currentTask > 0){ state.currentTask -= 1; saveState(); render(); }
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+  $("#btnNext").addEventListener("click", () => {
+    const last = activeTasks().length - 1;
+    if(state.finished){ if(reviewTaskIndex < last){ reviewTaskIndex += 1; reviewHighlightParts = []; render(); } }
+    else if(state.currentTask < last){ state.currentTask += 1; saveState(); render(); }
+    else { requestFinish(); return; }
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+  $("#btnFinishEarly").addEventListener("click", requestFinish);
+  $("#btnBackToResults").addEventListener("click", () => {
+    reviewTaskIndex = null; reviewHighlightParts = []; render(); window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+  $("#btnPrint").addEventListener("click", () => window.print());
+  $("#btnSaveTxt").addEventListener("click", saveTxt);
+  $("#btnSaveJson").addEventListener("click", saveJson);
+  $("#btnRestart").addEventListener("click", restartTrainer);
+  $("#btnRestartGlobal").addEventListener("click", restartTrainer);
+});
+
+</script>
+</body>
+</html>
